@@ -4,10 +4,43 @@ import subprocess
 import ipaddress
 import socket
 import requests
+import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from flask import render_template
+from openai import OpenAI
 
+# Initialize OpenAI client with Replit AI Integrations
+# This internally uses Replit AI Integrations for OpenAI access, 
+# does not require your own API key, and charges are billed to your credits.
+client_ai = OpenAI(
+    api_key=os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY"),
+    base_url=os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
+)
+
+def get_ai_content(client_name, project_name):
+    """Generate dynamic content for the proposal using gpt-5."""
+    # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
+    # do not change this unless explicitly requested by the user
+    prompt = f"""
+    Create a technical proposal snippet for a project named '{project_name}' for the client '{client_name}'.
+    Return a JSON object with:
+    1. 'hero_desc': A 1-2 sentence compelling description.
+    2. 'features': Array of 3 objects with 'title', 'icon' (FontAwesome class like 'fas fa-shield'), and 'desc'.
+    3. 'tech_stack': Object with 'backend' (array of 4 strings) and 'data' (array of 4 strings).
+    
+    Keep it professional and specific to solution architecture.
+    """
+    try:
+        response = client_ai.chat.completions.create(
+            model="gpt-5",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        print(f"AI Error: {e}")
+        return None
 
 def is_safe_url(url):
     parsed = urlparse(url)
@@ -143,19 +176,21 @@ def generate_diagram(client_name):
         f.write(mermaid_code)
 
     try:
-        puppeteer_cfg = os.path.join("static", "puppeteer.json")
-        with open(puppeteer_cfg, "w") as f:
-            f.write('{"args":["--no-sandbox","--disable-setuid-sandbox"]}')
-
+        # Mermaid CLI on Replit/Nix can be finicky with arguments. 
+        # Using a simpler call and ensuring paths are absolute or handled correctly.
+        mmd_abs = os.path.abspath(mmd_path)
+        out_abs = os.path.abspath(out_path)
+        
+        # Simplified command to avoid "too many arguments" errors seen in logs
+        cmd = [
+            "npx", "-y", "@mermaid-js/mermaid-cli", "mmdc",
+            "-i", mmd_abs,
+            "-o", out_abs,
+            "-b", "transparent"
+        ]
+        
         result = subprocess.run(
-            [
-                "npx", "-y", "@mermaid-js/mermaid-cli", "mmdc",
-                "-i", mmd_path,
-                "-o", out_path,
-                "-b", "transparent",
-                "-w", "1200",
-                "-p", puppeteer_cfg,
-            ],
+            cmd,
             capture_output=True,
             text=True,
             timeout=60,
@@ -176,6 +211,9 @@ def build_proposal(client_url, project_name, app=None):
     else:
         client_data["project_name"] = f"{client_data['name']} Integration"
 
+    # Fetch AI-generated dynamic content
+    ai_content = get_ai_content(client_data["name"], client_data["project_name"])
+
     diagram_ok = generate_diagram(client_data["name"])
 
     template_data = {
@@ -183,6 +221,7 @@ def build_proposal(client_url, project_name, app=None):
         "my_brand": MY_BRAND,
         "diagram_available": diagram_ok,
         "project_name": client_data["project_name"],
+        "ai": ai_content
     }
 
     if app:
