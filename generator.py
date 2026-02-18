@@ -44,22 +44,25 @@ def get_ai_content(client_name, project_name, client_url):
     # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
     prompt = f"""
     Create a comprehensive technical proposal for a project named '{project_name}' for the client '{client_name}' ({client_url}).
+    IMPORTANT: Use Indian market competitive pricing (INR based, then convert to USD). 
+    A typical small-mid scale project in India might range from ₹2,00,000 to ₹10,00,000.
+    
     Return a JSON object with:
     1. 'hero_desc': A 1-2 sentence compelling description.
     2. 'executive_summary': A professional overview of the project goals.
     3. 'scope_of_work': Array of 4-5 key deliverables.
     4. 'roadmap': Array of 3-4 phases with 'phase' and 'details'.
     5. 'pricing': Object with:
-        - 'usd': String (e.g. '$20,000')
-        - 'inr': String (e.g. '₹16,50,000')
-        - 'terms': String
+        - 'usd': String (e.g. '$5,000')
+        - 'inr': String (e.g. '₹4,15,000')
+        - 'terms': String (e.g. '30% Advance, 40% Mid-way, 30% Deployment')
         - 'breakdown': Array of objects with 'item' and 'cost' (show both USD and INR)
-    6. 'resources': Array of objects with 'role' and 'allocation' (e.g. 'Full-time', 'Part-time').
+    6. 'resources': Array of objects with 'role' and 'allocation' (e.g. 'Part-time', 'Milestone-based').
     7. 'key_notes': Array of 3 important considerations.
     8. 'tech_stack': Object with 'backend' (array) and 'data' (array).
     9. 'mermaid_diagram': A simple, valid Mermaid.js 'graph TD' string. 
-       USE ONLY SIMPLE TEXT IN QUOTES. DO NOT USE SPECIAL CHARACTERS.
-       Example: 'graph TD\nA["Client"] --> B["API"]\nB --> C["Database"]'
+       USE ONLY SIMPLE TEXT IN QUOTES.
+       Example: 'graph TD\nA["User"] --> B["API"]\nB --> C["DB"]'
     """
     try:
         response = client_ai.chat.completions.create(
@@ -106,30 +109,50 @@ def scrape_client(client_url):
     return client_data
 
 def generate_diagram(mermaid_code):
-    if not mermaid_code: return False
+    """Generate diagram using mermaid-cli with explicit fallback to client-side rendering."""
+    if not mermaid_code: 
+        print("[Mermaid] No code provided")
+        return False
+    
     os.makedirs("static", exist_ok=True)
     mmd_path = os.path.abspath("static/temp.mmd")
     out_path = os.path.abspath("static/architecture.png")
     
-    # Clean mermaid code to ensure it's valid for mmdc
+    # Ensure graph TD is present
     cleaned_code = mermaid_code.strip()
-    if not cleaned_code.startswith(("graph", "flowchart", "sequenceDiagram", "classDiagram", "stateDiagram", "erDiagram", "gantt", "pie", "gitGraph")):
+    if not any(cleaned_code.startswith(t) for t in ["graph", "flowchart", "sequenceDiagram"]):
         cleaned_code = "graph TD\n" + cleaned_code
 
-    with open(mmd_path, "w") as f: f.write(cleaned_code)
+    with open(mmd_path, "w") as f: 
+        f.write(cleaned_code)
+        
+    print(f"[Mermaid] Generating diagram from code:\n{cleaned_code}")
     
     try:
-        # Use npx directly with minimal flags. 
-        # Replit Nix environment can be restrictive, so we use a simple call.
-        cmd = ["npx", "-y", "@mermaid-js/mermaid-cli", "mmdc", "-i", mmd_path, "-o", out_path, "-b", "transparent", "--scale", "2"]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        # The 'too many arguments' error usually comes from how npx or the shell handles arguments.
+        # We'll use a more direct approach or check if mermaid-cli is in node_modules
+        cli_path = "./node_modules/.bin/mmdc"
+        if os.path.exists(cli_path):
+            cmd = [cli_path, "-i", mmd_path, "-o", out_path, "-b", "transparent", "-p", "puppeteer_config.json"]
+        else:
+            cmd = ["npx", "-y", "-p", "@mermaid-js/mermaid-cli", "mmdc", "-i", mmd_path, "-o", out_path, "-b", "transparent"]
         
-        if result.returncode != 0:
-            print(f"Mermaid CLI Error: {result.stderr}")
+        # Create a basic puppeteer config to help with sandbox issues in Nix
+        with open("puppeteer_config.json", "w") as f:
+            json.dump({"args": ["--no-sandbox", "--disable-setuid-sandbox"]}, f)
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0 and os.path.exists(out_path):
+            print("[Mermaid] Successfully generated diagram image.")
+            return True
+        else:
+            print(f"[Mermaid] CLI Failed. Return code: {result.returncode}")
+            print(f"[Mermaid] Stdout: {result.stdout}")
+            print(f"[Mermaid] Stderr: {result.stderr}")
             return False
-        return os.path.exists(out_path)
     except Exception as e:
-        print(f"Diagram generation exception: {e}")
+        print(f"[Mermaid] Exception during generation: {e}")
         return False
 
 def build_proposal(client_url, project_name, app=None):
@@ -137,12 +160,14 @@ def build_proposal(client_url, project_name, app=None):
     p_name = project_name if project_name else f"{client_data['name']} Digital Transformation"
     ai_content = get_ai_content(client_data["name"], p_name, client_url)
     
+    # Try generating image
     diagram_ok = generate_diagram(ai_content.get("mermaid_diagram") if ai_content else None)
     
     template_data = {
         "client": client_data,
         "my_brand": MY_BRAND,
         "diagram_available": diagram_ok,
+        "mermaid_code": ai_content.get("mermaid_diagram") if ai_content else None,
         "project_name": p_name,
         "ai": ai_content
     }

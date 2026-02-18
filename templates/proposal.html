@@ -6,6 +6,11 @@
     <title>{{ project_name }} — {{ my_brand.name }} Proposal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Mermaid.js for client-side fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    </script>
     <style>
         :root { --client-color: {{ client.color or '#3B82F6' }}; }
         .accent-bg { background-color: var(--client-color); }
@@ -60,13 +65,17 @@
             <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-project-diagram accent-text"></i> Proposed Architecture</h2>
             <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 text-center">
                 {% if diagram_available %}
-                <img src="/static/architecture.png?v={{ range(1,999) | random }}" class="max-w-full h-auto mx-auto rounded-lg">
+                    <img src="/static/architecture.png?v={{ range(1,9999) | random }}" class="max-w-full h-auto mx-auto rounded-lg">
+                {% elif mermaid_code %}
+                    <div class="mermaid mx-auto">
+                        {{ mermaid_code }}
+                    </div>
+                    <p class="text-xs text-slate-400 mt-4 italic">Rendered via Client-side Fallback</p>
                 {% else %}
-                <div class="py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                    <i class="fas fa-microchip text-4xl text-slate-300 mb-4"></i>
-                    <p class="text-slate-500 italic">Advanced Architecture Visualization in Progress...</p>
-                    <p class="text-xs text-slate-400 mt-2">Diagram is being optimized for your specific scale.</p>
-                </div>
+                    <div class="py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                        <i class="fas fa-microchip text-4xl text-slate-300 mb-4"></i>
+                        <p class="text-slate-500 italic">Architecture Visualization in Progress...</p>
+                    </div>
                 {% endif %}
             </div>
         </section>
@@ -104,7 +113,7 @@
         </section>
 
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-money-bill-wave accent-text"></i> Investment Details</h2>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-money-bill-wave accent-text"></i> Investment Details (Indian Market)</h2>
             <div class="bg-slate-900 text-white p-10 rounded-3xl shadow-2xl overflow-hidden relative">
                 <div class="absolute top-0 right-0 p-8 opacity-10">
                     <i class="fas fa-file-invoice-dollar text-9xl"></i>
@@ -113,12 +122,12 @@
                     <div>
                         <h4 class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Pricing Summary</h4>
                         <div class="flex items-baseline gap-4 mb-2">
-                            <span class="text-5xl font-bold text-white">{{ ai.pricing.usd }}</span>
-                            <span class="text-slate-400">/ USD</span>
+                            <span class="text-5xl font-bold text-white">{{ ai.pricing.inr }}</span>
+                            <span class="text-slate-400">/ INR</span>
                         </div>
                         <div class="flex items-baseline gap-4 mb-6">
-                            <span class="text-3xl font-bold text-sky-400">{{ ai.pricing.inr }}</span>
-                            <span class="text-slate-400">/ INR</span>
+                            <span class="text-3xl font-bold text-sky-400">{{ ai.pricing.usd }}</span>
+                            <span class="text-slate-400">/ USD</span>
                         </div>
                         <div class="bg-slate-800/50 p-4 rounded-xl">
                             <h5 class="font-bold mb-1">Terms</h5>
