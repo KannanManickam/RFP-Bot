@@ -149,19 +149,24 @@ def get_ai_content(client_name, project_name, client_url=None,
       Avoid listing separate roles for PM, QA, DevOps, etc. unless the project truly demands it. Keep it lean and cost-effective.
 
     Return a JSON object with:
-    1. 'hero_desc': A 1-2 sentence compelling description that references the actual project requirements.
-    2. 'executive_summary': A professional overview of the project goals, summarizing the client's needs and the proposed solution.
-    3. 'scope_of_work': Array of 4-5 key deliverables directly tied to the stated requirements.
-    4. 'roadmap': Array of 3-4 phases with 'phase' and 'details', reflecting the actual work to be done.
-    5. 'pricing': Object with:
+    1. 'project_title': A short, professional project name derived from the actual requirement (e.g. 'Quiz & Certification Platform', 'Self-Ordering Kiosk System'). Do NOT use generic names like 'Digital Transformation'.
+    2. 'hero_desc': A 1-2 sentence compelling description that references the actual project requirements.
+    3. 'executive_summary': A professional overview of the project goals, summarizing the client's needs and the proposed solution.
+    4. 'scope_of_work': Array of 4-5 key deliverables directly tied to the stated requirements.
+    5. 'roadmap': Array of 3-4 phases. Each phase has:
+        - 'phase': Name of the phase (e.g. 'Phase 1: Discovery & Architecture')
+        - 'duration': Duration string (e.g. '2 Weeks', '3 Weeks') — ALWAYS include this.
+        - 'details': Description of work done in this phase.
+    6. 'total_duration': Total project duration as a string (e.g. '10–12 Weeks').
+    7. 'pricing': Object with:
         - 'total': String — the total project cost in {currency} ONLY (e.g. '{"₹6,50,000" if currency == "INR" else "$7,500"}')
         - 'terms': String (e.g. '30% Advance, 40% Mid-way, 30% Deployment')
         - 'breakdown': Array of objects with 'item' (string) and 'cost' (string in {currency} ONLY, e.g. '{"₹1,00,000" if currency == "INR" else "$1,200"}').
           IMPORTANT: 'cost' MUST be a plain string like '{"₹1,00,000" if currency == "INR" else "$1,200"}', NOT a dict or object.
-    6. 'resources': Array of 2-3 lean team members. Each object has 'role' (string) and 'allocation' (string like 'Full-time', 'Part-time', 'As needed').
-    7. 'key_notes': Array of 3 important considerations specific to this project.
-    8. 'tech_stack': Object with 'backend' (array) and 'data' (array).
-    9. 'mermaid_diagram': A simple, valid Mermaid.js 'graph TD' string representing the architecture.
+    8. 'resources': Array of 2-3 lean team members. Each object has 'role' (string) and 'allocation' (string like 'Full-time', 'Part-time', 'As needed').
+    9. 'key_notes': Array of 3 important considerations specific to this project.
+    10. 'tech_stack': Object with 'backend' (array) and 'data' (array).
+    11. 'mermaid_diagram': A simple, valid Mermaid.js 'graph TD' string representing the architecture.
        USE ONLY SIMPLE TEXT IN QUOTES.
        Example: 'graph TD\\nA["User"] --> B["API"]\\nB --> C["DB"]'
     """
@@ -305,8 +310,8 @@ def build_proposal(client_name=None, client_url=None, project_name=None,
     # Build client data
     client_data = build_client_data(client_name, client_url)
 
-    # Determine project name
-    p_name = project_name if project_name else f"{client_data['name']} Digital Transformation"
+    # Determine project name — use AI-generated title if available, fallback to provided name
+    p_name = project_name if project_name else None  # Will be set after AI response
 
     # Generate unique proposal ID
     proposal_id = generate_proposal_id(client_data["name"])
@@ -316,12 +321,18 @@ def build_proposal(client_name=None, client_url=None, project_name=None,
     # Generate AI content with all available context
     ai_content = get_ai_content(
         client_data["name"],
-        p_name,
+        p_name or f"{client_data['name']} Project",
         client_url=client_url,
         brief_requirement=brief_requirement,
         detailed_requirement=detailed_requirement,
         currency=currency
     )
+
+    # Use AI-generated project title if no explicit name was given
+    if not p_name and ai_content:
+        p_name = ai_content.get("project_title", f"{client_data['name']} Project")
+    elif not p_name:
+        p_name = f"{client_data['name']} Project"
 
     # Try generating diagram into the proposal's directory
     diagram_ok = generate_diagram(

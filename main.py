@@ -118,7 +118,7 @@ DASHBOARD_TEMPLATE = """
                         </div>
                     </div>
                     <div class="text-right hidden sm:block">
-                        <p class="text-slate-500 text-xs">{{ p.created_at[:10] if p.created_at else '' }}</p>
+                        <p class="text-slate-500 text-xs">{{ p.created_at[:16].replace('T', ' ') if p.created_at else '' }}</p>
                         <div class="flex items-center gap-1 text-sky-400 text-sm mt-1">
                             <span>View</span>
                             <i class="fas fa-arrow-right text-xs"></i>
@@ -191,7 +191,7 @@ def serve_static(filename):
 def get_proposal_base_url():
     """Get the base URL for proposal links."""
     if DOMAIN:
-        return f"https://{DOMAIN}"
+        return f"http://{DOMAIN}:8080"
     return "http://localhost:8080"
 
 
