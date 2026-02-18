@@ -43,13 +43,15 @@ COPY package.json package-lock.json ./
 # Install Python dependencies
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir $(python3 -c "
-import tomllib
-with open('pyproject.toml', 'rb') as f:
-    data = tomllib.load(f)
-deps = data.get('project', {}).get('dependencies', [])
-print(' '.join(deps))
-")
+    pip install --no-cache-dir \
+    beautifulsoup4 \
+    flask \
+    gunicorn \
+    openai \
+    pdfplumber \
+    python-dotenv \
+    pytelegrambotapi \
+    requests
 
 # Copy application code
 COPY main.py generator.py document_parser.py puppeteer_config.json ./
