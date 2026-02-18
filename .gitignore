@@ -21,3 +21,4 @@ static/proposals/
 .uv/
 .local/state/replit/agent/
 .env
+.agent/workflows/deploy-vps.md
