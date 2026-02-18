@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import threading
 import telebot
 from flask import Flask, send_from_directory, send_file
@@ -93,7 +96,7 @@ if bot:
             if DOMAIN:
                 proposal_url = f"https://{DOMAIN}/proposal"
             else:
-                proposal_url = "http://localhost:5000/proposal"
+                proposal_url = "http://localhost:8080/proposal"
 
             caption = (
                 f"Proposal ready for **{result['client']['name']}**!\n\n"
@@ -126,4 +129,4 @@ else:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=8080, debug=False)

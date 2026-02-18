@@ -18,3 +18,5 @@ static/puppeteer.json
 static/architecture.png
 static/proposal.html
 .uv/
+.local/state/replit/agent/
+.env

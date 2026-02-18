@@ -66,7 +66,7 @@ def get_ai_content(client_name, project_name, client_url):
     """
     try:
         response = client_ai.chat.completions.create(
-            model="gpt-5",
+            model="gpt-5-nano",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
