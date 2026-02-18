@@ -8,6 +8,8 @@ dependencies = [
     "flask>=3.1.2",
     "gunicorn>=25.1.0",
     "openai>=2.21.0",
+    "pdfplumber>=0.11.0",
+    "python-dotenv>=1.0.0",
     "pytelegrambotapi>=4.31.0",
     "requests>=2.32.5",
 ]

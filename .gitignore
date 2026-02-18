@@ -17,6 +17,7 @@ static/temp.mmd
 static/puppeteer.json
 static/architecture.png
 static/proposal.html
+static/proposals/
 .uv/
 .local/state/replit/agent/
 .env

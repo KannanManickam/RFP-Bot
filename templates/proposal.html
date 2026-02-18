@@ -1,26 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project_name }} — {{ my_brand.name }} Proposal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- Mermaid.js for client-side fallback -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>
         mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
     </script>
     <style>
-        :root { --client-color: {{ client.color or '#3B82F6' }}; }
-        .accent-bg { background-color: var(--client-color); }
-        .accent-text { color: var(--client-color); }
-        .accent-border { border-color: var(--client-color); }
-        .gradient-hero { background: linear-gradient(135deg, var(--client-color) 0%, #1e293b 100%); }
-        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .accent-bg {
+            background-color: var(--client-color);
+        }
+
+        .accent-text {
+            color: var(--client-color);
+        }
+
+        .accent-border {
+            border-color: var(--client-color);
+        }
+
+        .gradient-hero {
+            background: linear-gradient(135deg, var(--client-color) 0%, #1e293b 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans">
+
+<body style="--client-color: {{ client.color or '#3B82F6' }}" class="bg-slate-50 text-slate-900">
     <header class="bg-white border-b-4 accent-border sticky top-0 z-50 shadow-sm">
         <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-4">
@@ -37,20 +58,26 @@
 
     <section class="gradient-hero text-white py-24 px-6 text-center">
         <h1 class="text-5xl font-extrabold mb-6">{{ project_name }}</h1>
-        <p class="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">{{ ai.hero_desc if ai else "Custom Architecture Proposal" }}</p>
+        <p class="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">{{ ai.hero_desc if ai else "Custom Architecture
+            Proposal" }}</p>
     </section>
 
     <main class="max-w-6xl mx-auto px-6 py-12 space-y-16">
         {% if ai %}
+
+        <!-- Executive Summary -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-file-alt accent-text"></i> Executive Summary</h2>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-file-alt accent-text"></i>
+                Executive Summary</h2>
             <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 leading-relaxed text-slate-700">
                 {{ ai.executive_summary }}
             </div>
         </section>
 
+        <!-- Core Deliverables -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-tasks accent-text"></i> Core Deliverables</h2>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-tasks accent-text"></i> Core
+                Deliverables</h2>
             <div class="grid md:grid-cols-2 gap-4">
                 {% for item in ai.scope_of_work %}
                 <div class="bg-white p-4 rounded-xl border-l-4 accent-border card-shadow flex items-center gap-3">
@@ -61,49 +88,42 @@
             </div>
         </section>
 
+        <!-- Proposed Architecture -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-project-diagram accent-text"></i> Proposed Architecture</h2>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i
+                    class="fas fa-project-diagram accent-text"></i> Proposed Architecture</h2>
             <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 text-center">
                 {% if diagram_available %}
-                    <img src="/static/architecture.png?v={{ range(1,9999) | random }}" class="max-w-full h-auto mx-auto rounded-lg">
+                <img src="{{ diagram_path }}?v={{ range(1,9999) | random }}"
+                    class="max-w-full h-auto mx-auto rounded-lg">
                 {% elif mermaid_code %}
-                    <div class="mermaid mx-auto">
-                        {{ mermaid_code }}
-                    </div>
-                    <p class="text-xs text-slate-400 mt-4 italic">Rendered via Client-side Fallback</p>
+                <div class="mermaid mx-auto">
+                    {{ mermaid_code }}
+                </div>
+                <p class="text-xs text-slate-400 mt-4 italic">Rendered via Client-side Fallback</p>
                 {% else %}
-                    <div class="py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                        <i class="fas fa-microchip text-4xl text-slate-300 mb-4"></i>
-                        <p class="text-slate-500 italic">Architecture Visualization in Progress...</p>
-                    </div>
+                <div class="py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                    <i class="fas fa-microchip text-4xl text-slate-300 mb-4"></i>
+                    <p class="text-slate-500 italic">Architecture Visualization in Progress...</p>
+                </div>
                 {% endif %}
             </div>
         </section>
 
+        <!-- Implementation Roadmap -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-users accent-text"></i> Resource Planning</h2>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for resource in ai.resources %}
-                <div class="bg-white p-6 rounded-xl card-shadow border border-slate-100">
-                    <div class="accent-bg text-white w-10 h-10 rounded-lg flex items-center justify-center mb-4">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <h4 class="font-bold text-lg mb-1">{{ resource.role }}</h4>
-                    <p class="text-slate-500 text-sm">{{ resource.allocation }}</p>
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-road accent-text"></i> Implementation Roadmap</h2>
-            <div class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-road accent-text"></i>
+                Implementation Roadmap</h2>
+            <div
+                class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
                 {% for step in ai.roadmap %}
                 <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-hover:bg-accent-bg text-slate-500 group-hover:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors duration-300">
+                    <div
+                        class="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-hover:bg-accent-bg text-slate-500 group-hover:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors duration-300">
                         {{ loop.index }}
                     </div>
-                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-6 rounded-xl card-shadow border border-slate-100">
+                    <div
+                        class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-6 rounded-xl card-shadow border border-slate-100">
                         <h4 class="font-bold text-lg accent-text">{{ step.phase }}</h4>
                         <p class="text-slate-600 mt-2">{{ step.details }}</p>
                     </div>
@@ -112,8 +132,10 @@
             </div>
         </section>
 
+        <!-- Investment Details -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-money-bill-wave accent-text"></i> Investment Details (Indian Market)</h2>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i
+                    class="fas fa-money-bill-wave accent-text"></i> Investment Details</h2>
             <div class="bg-slate-900 text-white p-10 rounded-3xl shadow-2xl overflow-hidden relative">
                 <div class="absolute top-0 right-0 p-8 opacity-10">
                     <i class="fas fa-file-invoice-dollar text-9xl"></i>
@@ -121,16 +143,11 @@
                 <div class="grid md:grid-cols-2 gap-12 relative z-10">
                     <div>
                         <h4 class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Pricing Summary</h4>
-                        <div class="flex items-baseline gap-4 mb-2">
-                            <span class="text-5xl font-bold text-white">{{ ai.pricing.inr }}</span>
-                            <span class="text-slate-400">/ INR</span>
-                        </div>
                         <div class="flex items-baseline gap-4 mb-6">
-                            <span class="text-3xl font-bold text-sky-400">{{ ai.pricing.usd }}</span>
-                            <span class="text-slate-400">/ USD</span>
+                            <span class="text-5xl font-bold text-white">{{ ai.pricing.total }}</span>
                         </div>
                         <div class="bg-slate-800/50 p-4 rounded-xl">
-                            <h5 class="font-bold mb-1">Terms</h5>
+                            <h5 class="font-bold mb-1">Payment Terms</h5>
                             <p class="text-slate-400 text-sm">{{ ai.pricing.terms }}</p>
                         </div>
                     </div>
@@ -140,7 +157,7 @@
                             {% for item in ai.pricing.breakdown %}
                             <li class="flex justify-between items-center border-b border-slate-800 pb-2">
                                 <span class="text-slate-300">{{ item.item }}</span>
-                                <span class="font-mono text-sky-400 text-sm">{{ item.cost }}</span>
+                                <span class="font-mono text-sky-400 text-sm font-semibold">{{ item.cost }}</span>
                             </li>
                             {% endfor %}
                         </ul>
@@ -149,8 +166,52 @@
             </div>
         </section>
 
+        <!-- Team & Resources (lean, compact table layout) -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-info-circle accent-text"></i> Key Notes & Assumptions</h2>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-users accent-text"></i> Team &
+                Resources</h2>
+            <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th
+                                class="text-left px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                                Role</th>
+                            <th
+                                class="text-left px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                                Allocation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for resource in ai.resources %}
+                        <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="accent-bg text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs shrink-0">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="font-semibold text-slate-800">{{ resource.role }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span
+                                    class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-sm font-medium">
+                                    <i class="fas fa-clock text-xs"></i>
+                                    {{ resource.allocation }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Key Notes & Assumptions -->
+        <section>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-info-circle accent-text"></i>
+                Key Notes & Assumptions</h2>
             <div class="grid md:grid-cols-3 gap-6">
                 {% for note in ai.key_notes %}
                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
@@ -168,13 +229,23 @@
     <footer class="bg-slate-900 text-white py-16 px-6 text-center border-t border-slate-800">
         <div class="max-w-6xl mx-auto">
             <p class="text-slate-400 mb-6">Strategic Partnership Proposal by {{ my_brand.name }} Solutions</p>
+            {% if generated_at %}
+            <p class="text-slate-500 text-sm mb-4"><i class="fas fa-calendar-alt mr-2"></i>Generated on {{ generated_at
+                }}</p>
+            {% endif %}
             <div class="flex justify-center gap-8 mb-8">
-                <a href="{{ my_brand.website }}" class="text-sky-400 hover:text-sky-300 transition"><i class="fas fa-globe mr-2"></i>sparktoship.com</a>
+                <a href="{{ my_brand.website }}" class="text-sky-400 hover:text-sky-300 transition"><i
+                        class="fas fa-globe mr-2"></i>sparktoship.com</a>
                 <span class="text-slate-700">|</span>
                 <span class="text-slate-400"><i class="fas fa-envelope mr-2"></i>solutions@sparktoship.com</span>
+            </div>
+            <div class="mb-6">
+                <a href="/" class="text-sky-400 hover:text-sky-300 transition text-sm"><i
+                        class="fas fa-arrow-left mr-2"></i>Back to Dashboard</a>
             </div>
             <p class="text-xs text-slate-600">&copy; 2026 {{ my_brand.name }}. All rights reserved.</p>
         </div>
     </footer>
 </body>
+
 </html>
