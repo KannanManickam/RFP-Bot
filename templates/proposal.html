@@ -6,105 +6,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project_name }} — {{ my_brand.name }} Proposal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        beige: '#f0efe7',
+                        charcoal: '#5a5a4a',
+                        orange: '#ff8c42',
+                        teal: '#50c8a3',
+                        grid: '#e6e4d9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        lg: '0.75rem',
+                        md: 'calc(0.75rem - 2px)',
+                        sm: 'calc(0.75rem - 4px)',
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
         rel="stylesheet">
     <!-- Mermaid.js for client-side fallback -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
     </script>
     <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .accent-bg {
-            background-color: var(--client-color);
-        }
-
-        .accent-text {
-            color: var(--client-color);
-        }
-
-        .accent-border {
-            border-color: var(--client-color);
-        }
-
-        .gradient-hero {
-            background: linear-gradient(135deg, var(--client-color) 0%, #1e293b 100%);
-        }
-
         .card-shadow {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
 
-<body style="--client-color: {{ client.color or '#3B82F6' }}" class="bg-slate-50 text-slate-900">
-    <header class="bg-white border-b-4 accent-border sticky top-0 z-50 shadow-sm">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+<body class="bg-beige text-charcoal font-sans min-h-screen selection:bg-orange selection:text-white">
+    <!-- Header -->
+    <header class="bg-beige/80 backdrop-blur-md border-b border-grid sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-4">
-                {% if client.logo %}<img src="{{ client.logo }}" class="h-8 w-auto">{% endif %}
-                <span class="font-bold text-xl">{{ client.name }}</span>
+                {% if client.logo %}
+                <img src="{{ client.logo }}" class="h-8 w-auto rounded opacity-90 mix-blend-multiply">
+                <span class="text-charcoal/30 text-xl hidden md:block">/</span>
+                {% endif %}
+                <span class="font-display font-bold text-xl text-charcoal hidden sm:block">{{ client.name }}</span>
             </div>
-            <span class="text-slate-300 text-2xl hidden md:block">&times;</span>
-            <div class="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg">
-                <i class="fas fa-rocket text-sky-400"></i>
-                <span class="font-bold">{{ my_brand.name }}</span>
+            
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-medium text-charcoal/50 uppercase tracking-wider hidden sm:block">Proposal By</span>
+                <img src="/static/LogoFull.png" alt="{{ my_brand.name }}" class="h-8 w-auto">
             </div>
         </div>
     </header>
 
-    <section class="gradient-hero text-white py-24 px-6 text-center">
-        <h1 class="text-5xl font-extrabold mb-6">{{ project_name }}</h1>
-        <p class="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">{{ ai.hero_desc if ai else "Custom Architecture
-            Proposal" }}</p>
+    <!-- Hero Section -->
+    <section class="py-20 px-6 text-center max-w-4xl mx-auto">
+        <div class="inline-flex items-center gap-2 bg-white border border-grid px-3 py-1 rounded-full text-xs font-semibold text-orange mb-6 shadow-sm">
+            <i class="fas fa-bolt"></i> Strategic Proposal
+        </div>
+        <h1 class="text-5xl md:text-6xl font-display font-bold mb-6 text-charcoal leading-tight">{{ project_name }}</h1>
+        <p class="text-xl text-charcoal/70 max-w-2xl mx-auto leading-relaxed">{{ ai.hero_desc if ai else "Custom Architecture Proposal" }}</p>
     </section>
 
-    <main class="max-w-6xl mx-auto px-6 py-12 space-y-16">
+    <main class="max-w-5xl mx-auto px-6 pb-20 space-y-12">
         {% if ai %}
 
         <!-- Executive Summary -->
-        <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-file-alt accent-text"></i>
-                Executive Summary</h2>
-            <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 leading-relaxed text-slate-700">
+        <section class="bg-white p-8 md:p-10 rounded-lg border border-grid card-shadow">
+            <h2 class="text-2xl font-display font-bold mb-6 flex items-center gap-3 text-charcoal">
+                <div class="w-8 h-8 rounded-full bg-orange/10 flex items-center justify-center text-orange text-sm">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                Executive Summary
+            </h2>
+            <div class="prose prose-slate max-w-none text-charcoal/80 leading-loose">
                 {{ ai.executive_summary }}
             </div>
         </section>
 
         <!-- Core Deliverables -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-tasks accent-text"></i> Core
-                Deliverables</h2>
+            <h2 class="text-2xl font-display font-bold mb-6 text-charcoal px-2">Core Deliverables</h2>
             <div class="grid md:grid-cols-2 gap-4">
                 {% for item in ai.scope_of_work %}
-                <div class="bg-white p-4 rounded-xl border-l-4 accent-border card-shadow flex items-center gap-3">
-                    <i class="fas fa-check-circle accent-text"></i>
-                    <span>{{ item }}</span>
+                <div class="bg-white p-6 rounded-lg border border-grid hover:border-orange transition-colors duration-300 card-shadow flex items-start gap-4">
+                    <div class="mt-1 text-teal text-lg"><i class="fas fa-check-circle"></i></div>
+                    <span class="text-charcoal/80 font-medium">{{ item }}</span>
                 </div>
                 {% endfor %}
             </div>
         </section>
 
         <!-- Proposed Architecture -->
-        <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i
-                    class="fas fa-project-diagram accent-text"></i> Proposed Architecture</h2>
-            <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 text-center">
+        <section class="bg-white p-8 md:p-10 rounded-lg border border-grid card-shadow">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-display font-bold gap-3 text-charcoal">Proposed Architecture</h2>
+                <span class="bg-beige text-charcoal/60 px-3 py-1 rounded text-xs font-mono">Mermaid.js</span>
+            </div>
+            
+            <div class="bg-beige/30 p-2 rounded-lg border border-grid text-center overflow-hidden">
                 {% if diagram_available %}
                 <img src="{{ diagram_path }}?v={{ range(1,9999) | random }}"
-                    class="max-w-full h-auto mx-auto rounded-lg">
+                    class="max-w-full h-auto mx-auto rounded mix-blend-multiply">
                 {% elif mermaid_code %}
-                <div class="mermaid mx-auto">
+                <div class="mermaid mx-auto bg-transparent">
                     {{ mermaid_code }}
                 </div>
-                <p class="text-xs text-slate-400 mt-4 italic">Rendered via Client-side Fallback</p>
+                <p class="text-xs text-charcoal/40 mt-4 italic">Rendered via Client-side Fallback</p>
                 {% else %}
-                <div class="py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                    <i class="fas fa-microchip text-4xl text-slate-300 mb-4"></i>
-                    <p class="text-slate-500 italic">Architecture Visualization in Progress...</p>
+                <div class="py-12 bg-beige rounded border-2 border-dashed border-grid">
+                    <i class="fas fa-microchip text-4xl text-grid mb-4"></i>
+                    <p class="text-charcoal/40 italic">Architecture Visualization in Progress...</p>
                 </div>
                 {% endif %}
             </div>
@@ -112,34 +129,30 @@
 
         <!-- Implementation Roadmap -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-road accent-text"></i>
-                Implementation Roadmap</h2>
-            {% if ai.total_duration %}
-            <div class="bg-slate-800 text-white px-6 py-3 rounded-xl mb-6 inline-flex items-center gap-2">
-                <i class="fas fa-calendar-check text-sky-400"></i>
-                <span class="font-semibold">Total Duration: {{ ai.total_duration }}</span>
+            <div class="flex items-center justify-between mb-8 px-2">
+                <h2 class="text-2xl font-display font-bold text-charcoal">Implementation Roadmap</h2>
+                {% if ai.total_duration %}
+                <span class="bg-teal/10 text-teal px-4 py-2 rounded-full font-bold text-sm border border-teal/20">
+                    <i class="fas fa-clock mr-2"></i>{{ ai.total_duration }}
+                </span>
+                {% endif %}
             </div>
-            {% endif %}
-            <div
-                class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+            
+            <div class="relative space-y-6 before:absolute before:inset-0 before:left-6 md:before:left-1/2 before:w-0.5 before:-ml-px before:bg-grid">
                 {% for step in ai.roadmap %}
-                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div
-                        class="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-hover:bg-accent-bg text-slate-500 group-hover:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors duration-300">
+                <div class="relative flex flex-col md:flex-row items-center md:items-start md:justify-between group">
+                    <!-- Number Bubble -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white border-2 border-orange text-orange font-bold flex items-center justify-center z-10 shadow-sm mt-0 md:mt-0">
                         {{ loop.index }}
                     </div>
-                    <div
-                        class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-6 rounded-xl card-shadow border border-slate-100">
+                    
+                    <!-- Content Card -->
+                    <div class="ml-16 md:ml-0 md:w-[calc(50%-2rem)] bg-white p-6 rounded-lg border border-grid card-shadow {{ 'md:mr-auto' if loop.index is odd else 'md:ml-auto' }}">
                         <div class="flex items-center justify-between mb-2">
-                            <h4 class="font-bold text-lg accent-text">{{ step.phase }}</h4>
-                            {% if step.duration %}
-                            <span
-                                class="inline-flex items-center gap-1 bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-xs font-semibold shrink-0">
-                                <i class="fas fa-clock"></i> {{ step.duration }}
-                            </span>
-                            {% endif %}
+                            <h4 class="font-display font-bold text-lg text-charcoal">{{ step.phase }}</h4>
+                            <span class="text-xs font-bold text-orange uppercase tracking-wide">{{ step.duration }}</span>
                         </div>
-                        <p class="text-slate-600 mt-1">{{ step.details }}</p>
+                        <p class="text-charcoal/70 text-sm leading-relaxed">{{ step.details }}</p>
                     </div>
                 </div>
                 {% endfor %}
@@ -147,117 +160,80 @@
         </section>
 
         <!-- Investment Details -->
-        <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i
-                    class="fas fa-money-bill-wave accent-text"></i> Investment Details</h2>
-            <div class="bg-slate-900 text-white p-10 rounded-3xl shadow-2xl overflow-hidden relative">
-                <div class="absolute top-0 right-0 p-8 opacity-10">
-                    <i class="fas fa-file-invoice-dollar text-9xl"></i>
-                </div>
-                <div class="grid md:grid-cols-2 gap-12 relative z-10">
-                    <div>
-                        <h4 class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Pricing Summary</h4>
-                        <div class="flex items-baseline gap-4 mb-6">
-                            <span class="text-5xl font-bold text-white">{{ ai.pricing.total }}</span>
-                        </div>
-                        <div class="bg-slate-800/50 p-4 rounded-xl">
-                            <h5 class="font-bold mb-1">Payment Terms</h5>
-                            <p class="text-slate-400 text-sm">{{ ai.pricing.terms }}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Cost Breakdown</h4>
-                        <ul class="space-y-4">
-                            {% for item in ai.pricing.breakdown %}
-                            <li class="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <span class="text-slate-300">{{ item.item }}</span>
-                                <span class="font-mono text-sky-400 text-sm font-semibold">{{ item.cost }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
+        <section class="bg-charcoal text-beige p-8 md:p-12 rounded-lg shadow-xl relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+            
+            <h2 class="text-2xl font-display font-bold mb-8 relative z-10">Investment Details</h2>
+            
+            <div class="grid md:grid-cols-2 gap-12 relative z-10">
+                <div>
+                    <div class="text-charcoal/60 uppercase tracking-widest text-xs font-bold mb-2">Total Project Cost</div>
+                    <div class="text-5xl font-display font-bold text-white mb-6">{{ ai.pricing.total }}</div>
+                    
+                    <div class="bg-white/5 border border-white/10 p-6 rounded-lg">
+                        <h5 class="font-bold mb-2 text-orange text-sm uppercase">Payment Terms</h5>
+                        <p class="text-beige/80 text-sm leading-relaxed">{{ ai.pricing.terms }}</p>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Team & Resources (lean, compact table layout) -->
-        <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-users accent-text"></i> Team &
-                Resources</h2>
-            <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th
-                                class="text-left px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                                Role</th>
-                            <th
-                                class="text-left px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                                Allocation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for resource in ai.resources %}
-                        <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="accent-bg text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs shrink-0">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <span class="font-semibold text-slate-800">{{ resource.role }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span
-                                    class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-sm font-medium">
-                                    <i class="fas fa-clock text-xs"></i>
-                                    {{ resource.allocation }}
-                                </span>
-                            </td>
-                        </tr>
+                
+                <div>
+                    <div class="text-charcoal/60 uppercase tracking-widest text-xs font-bold mb-4">Cost Breakdown</div>
+                    <ul class="space-y-0">
+                        {% for item in ai.pricing.breakdown %}
+                        <li class="flex justify-between items-center py-4 border-b border-white/10 last:border-0 hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
+                            <span class="text-beige/90">{{ item.item }}</span>
+                            <span class="font-mono text-teal font-bold">{{ item.cost }}</span>
+                        </li>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </ul>
+                </div>
             </div>
         </section>
 
-        <!-- Key Notes & Assumptions -->
+        <!-- Team & Resources -->
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-info-circle accent-text"></i>
-                Key Notes & Assumptions</h2>
+            <h2 class="text-2xl font-display font-bold mb-6 text-charcoal px-2">Team Structure</h2>
             <div class="grid md:grid-cols-3 gap-6">
-                {% for note in ai.key_notes %}
-                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
-                    <div class="absolute -top-2 -right-2 opacity-5">
-                        <i class="fas fa-quote-right text-6xl"></i>
+                {% for resource in ai.resources %}
+                <div class="bg-white p-6 rounded-lg border border-grid card-shadow text-center">
+                    <div class="w-12 h-12 mx-auto bg-beige rounded-full flex items-center justify-center text-charcoal mb-4">
+                        <i class="fas fa-user"></i>
                     </div>
-                    <p class="text-slate-600 text-sm italic">"{{ note }}"</p>
+                    <h3 class="font-display font-bold text-charcoal mb-1">{{ resource.role }}</h3>
+                    <span class="inline-block bg-teal/10 text-teal text-xs px-2 py-1 rounded font-medium">{{ resource.allocation }}</span>
                 </div>
                 {% endfor %}
             </div>
         </section>
+
+        <!-- Key Notes -->
+        <section class="grid md:grid-cols-3 gap-4">
+            {% for note in ai.key_notes %}
+            <div class="bg-beige border border-grid p-6 rounded-lg flex gap-4">
+                <i class="fas fa-info-circle text-orange mt-1 shrink-0"></i>
+                <p class="text-sm text-charcoal/80 italic font-medium">"{{ note }}"</p>
+            </div>
+            {% endfor %}
+        </section>
+
         {% endif %}
     </main>
 
-    <footer class="bg-slate-900 text-white py-16 px-6 text-center border-t border-slate-800">
-        <div class="max-w-6xl mx-auto">
-            <p class="text-slate-400 mb-6">Strategic Partnership Proposal by {{ my_brand.name }} Solutions</p>
+    <footer class="bg-white border-t border-grid py-12 px-6 text-center">
+        <div class="max-w-4xl mx-auto">
+            <img src="/static/LogoIcon.png" class="h-10 w-auto mx-auto mb-6 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
+            <p class="text-charcoal/40 text-sm mb-6 max-w-lg mx-auto">Strategic Proposal generated by <strong>{{ my_brand.name }}</strong>'s AI Engine. This document is confidential and intended solely for the recipient.</p>
+            
             {% if generated_at %}
-            <p class="text-slate-500 text-sm mb-4"><i class="fas fa-calendar-alt mr-2"></i>Generated on {{ generated_at
-                }}</p>
+            <p class="text-charcoal/30 text-xs font-mono mb-8">{{ generated_at }}</p>
             {% endif %}
-            <div class="flex justify-center gap-8 mb-8">
-                <a href="{{ my_brand.website }}" class="text-sky-400 hover:text-sky-300 transition"><i
-                        class="fas fa-globe mr-2"></i>sparktoship.com</a>
-                <span class="text-slate-700">|</span>
-                <span class="text-slate-400"><i class="fas fa-envelope mr-2"></i>sparktoship@gmail.com</span>
+            
+            <div class="flex justify-center gap-6 text-sm font-medium text-charcoal/60">
+                <a href="{{ my_brand.website }}" class="hover:text-orange transition">Website</a>
+                <span>•</span>
+                <a href="/" class="hover:text-orange transition">Dashboard</a>
             </div>
-            <div class="mb-6">
-                <a href="/" class="text-sky-400 hover:text-sky-300 transition text-sm"><i
-                        class="fas fa-arrow-left mr-2"></i>Back to Dashboard</a>
-            </div>
-            <p class="text-xs text-slate-600">&copy; 2026 {{ my_brand.name }}. All rights reserved.</p>
         </div>
     </footer>
 </body>

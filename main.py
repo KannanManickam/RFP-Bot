@@ -80,48 +80,75 @@ DASHBOARD_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ brand.name }} — Proposal Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        beige: '#f0efe7',
+                        charcoal: '#5a5a4a',
+                        orange: '#ff8c42',
+                        teal: '#50c8a3',
+                        grid: '#e6e4d9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        lg: '0.75rem',
+                        md: 'calc(0.75rem - 2px)',
+                        sm: 'calc(0.75rem - 4px)',
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); border-color: rgba(56,189,248,0.4); }
-        .gradient-text { background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-color: #ff8c42; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
     </style>
 </head>
-<body class="bg-slate-950 min-h-screen">
-    <div class="max-w-5xl mx-auto px-6 py-16">
-        <div class="text-center mb-16 animate-in">
-            <div class="inline-flex items-center gap-3 bg-slate-800/60 px-5 py-2 rounded-full mb-8 border border-slate-700/50">
-                <i class="fas fa-rocket text-sky-400"></i>
-                <span class="text-slate-300 text-sm font-medium">{{ brand.name }}</span>
+<body class="bg-beige min-h-screen text-charcoal font-sans">
+    <div class="max-w-5xl mx-auto px-6 py-12">
+        <header class="flex items-center justify-between mb-12 animate-in">
+            <div class="flex items-center gap-4">
+                <img src="/static/LogoFull.png" alt="{{ brand.name }}" class="h-10 w-auto"> 
             </div>
-            <h1 class="text-5xl font-extrabold text-white mb-4">Proposal <span class="gradient-text">Dashboard</span></h1>
-            <p class="text-slate-400 text-lg max-w-xl mx-auto">{{ brand.tagline }} — All generated proposals in one place</p>
+            <!-- <div class="hidden sm:block text-sm font-medium text-charcoal/60">{{ brand.tagline }}</div> -->
+             <a href="#" class="bg-orange text-white px-5 py-2 rounded-full font-medium hover:opacity-90 transition shadow-sm text-sm">
+                <i class="fas fa-plus mr-2"></i>New Proposal
+            </a>
+        </header>
+
+        <div class="text-center mb-16 animate-in" style="animation-delay: 0.1s">
+            <h1 class="text-4xl md:text-5xl font-display font-bold text-charcoal mb-4">Proposal Dashboard</h1>
+            <p class="text-charcoal/70 text-lg max-w-xl mx-auto">Manage and track all your generated proposals in one place.</p>
         </div>
 
         {% if proposals %}
         <div class="grid gap-4">
             {% for p in proposals %}
-            <a href="{{ p.url }}" class="glass rounded-2xl p-6 card-hover block animate-in" style="animation-delay: {{ loop.index * 0.08 }}s">
+            <a href="{{ p.url }}" class="bg-white rounded-lg border border-grid p-6 card-hover block animate-in scheme-light" style="animation-delay: {{ loop.index * 0.05 + 0.2 }}s">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-full bg-teal/20 text-teal flex items-center justify-center font-display font-bold text-xl shrink-0 border border-teal/20">
                             {{ p.client_name[0] | upper if p.client_name else '?' }}
                         </div>
                         <div>
-                            <h3 class="text-white font-semibold text-lg">{{ p.client_name }}</h3>
-                            <p class="text-slate-400 text-sm">{{ p.project_name }}</p>
+                            <h3 class="font-display font-bold text-lg text-charcoal">{{ p.client_name }}</h3>
+                            <p class="text-charcoal/60 text-sm font-medium">{{ p.project_name }}</p>
                         </div>
                     </div>
                     <div class="text-right hidden sm:block">
-                        <p class="text-slate-500 text-xs">{{ p.created_at[:16].replace('T', ' ') if p.created_at else '' }}</p>
-                        <div class="flex items-center gap-1 text-sky-400 text-sm mt-1">
-                            <span>View</span>
-                            <i class="fas fa-arrow-right text-xs"></i>
+                        <p class="text-charcoal/50 text-xs font-mono mb-1">{{ p.created_at[:10] if p.created_at else '' }}</p>
+                        <div class="inline-flex items-center gap-1 text-orange font-medium text-sm group">
+                            <span>View Proposal</span>
+                            <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
                         </div>
                     </div>
                 </div>
@@ -129,19 +156,27 @@ DASHBOARD_TEMPLATE = """
             {% endfor %}
         </div>
         {% else %}
-        <div class="glass rounded-2xl p-16 text-center animate-in">
-            <i class="fas fa-inbox text-slate-600 text-5xl mb-6"></i>
-            <h3 class="text-white text-xl font-semibold mb-3">No proposals yet</h3>
-            <p class="text-slate-400 mb-6">Send <code class="bg-slate-800 text-sky-400 px-2 py-1 rounded text-sm">/pitch</code> to the Telegram bot to create your first proposal.</p>
-            <div class="bg-slate-800/60 rounded-xl p-5 max-w-md mx-auto text-left border border-slate-700/50">
-                <p class="text-slate-300 text-sm mb-2 font-medium">Quick start:</p>
-                <code class="text-sky-400 text-sm">/pitch</code>
-                <p class="text-slate-500 text-xs mt-2">The bot will guide you through the process step by step.</p>
+        <div class="bg-white rounded-lg border border-grid p-16 text-center animate-in shadow-sm" style="animation-delay: 0.2s">
+            <div class="w-20 h-20 bg-beige rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-inbox text-charcoal/40 text-3xl"></i>
+            </div>
+            <h3 class="font-display font-bold text-xl text-charcoal mb-2">No proposals yet</h3>
+            <p class="text-charcoal/60 mb-8 max-w-md mx-auto">Start by sending <code class="bg-beige px-2 py-1 rounded text-orange font-mono">/pitch</code> to the Telegram bot.</p>
+            
+            <div class="bg-beige/50 rounded-lg p-5 max-w-sm mx-auto text-left border border-grid">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-8 h-8 rounded-full bg-teal text-white flex items-center justify-center shrink-0"><i class="fab fa-telegram-plane"></i></div>
+                    <p class="text-charcoal font-medium text-sm">Quick Start</p>
+                </div>
+                <div class="pl-11">
+                    <code class="text-orange font-bold text-sm block mb-1">/pitch</code>
+                    <p class="text-charcoal/50 text-xs">The bot will guide you through the process step by step.</p>
+                </div>
             </div>
         </div>
         {% endif %}
 
-        <footer class="text-center mt-16 text-slate-600 text-sm">
+        <footer class="text-center mt-20 text-charcoal/40 text-sm font-medium">
             <p>&copy; 2026 {{ brand.name }}. All rights reserved.</p>
         </footer>
     </div>
