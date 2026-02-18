@@ -5,7 +5,7 @@ import ipaddress
 import socket
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from flask import render_template
@@ -39,7 +39,7 @@ def slugify(text):
 def generate_proposal_id(client_name):
     """Generate a unique proposal ID from client name + timestamp."""
     slug = slugify(client_name) if client_name else "proposal"
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+    timestamp = datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime("%Y%m%d-%H%M")
     return f"{slug}-{timestamp}"
 
 
@@ -70,7 +70,7 @@ def add_to_index(proposal_id, client_name, project_name, client_url=None):
         "client_name": client_name,
         "project_name": project_name,
         "client_url": client_url,
-        "created_at": datetime.now().isoformat(),
+        "created_at": datetime.now(timezone(timedelta(hours=5, minutes=30))).isoformat(),
         "url": f"/proposal/{proposal_id}"
     }
     index.insert(0, entry)  # newest first
@@ -349,7 +349,7 @@ def build_proposal(client_name=None, client_url=None, project_name=None,
         "project_name": p_name,
         "ai": ai_content,
         "proposal_id": proposal_id,
-        "generated_at": datetime.now().strftime("%B %d, %Y at %I:%M %p"),
+        "generated_at": datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime("%B %d, %Y at %I:%M %p") + " IST",
     }
 
     if app:
