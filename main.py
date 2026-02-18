@@ -14,7 +14,7 @@ from document_parser import parse_uploaded_file, fetch_remote_document
 app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN", "")
+DOMAIN = os.environ.get("APP_DOMAIN", os.environ.get("REPLIT_DEV_DOMAIN", ""))
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=False) if TELEGRAM_TOKEN else None
 

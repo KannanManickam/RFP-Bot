@@ -1,0 +1,17 @@
+.git
+.env
+__pycache__
+*.pyc
+node_modules
+static/proposals
+static/proposal.html
+static/architecture.png
+static/temp.mmd
+.DS_Store
+.local
+.config
+.replit
+.uv
+uv.lock
+attached_assets
+replit.md

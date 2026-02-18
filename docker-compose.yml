@@ -1,0 +1,17 @@
+services:
+  deal-closer-bot:
+    build: .
+    container_name: deal-closer-bot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - proposals_data:/app/static/proposals
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+volumes:
+  proposals_data:
