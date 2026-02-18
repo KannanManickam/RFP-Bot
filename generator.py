@@ -49,13 +49,17 @@ def get_ai_content(client_name, project_name, client_url):
     2. 'executive_summary': A professional overview of the project goals.
     3. 'scope_of_work': Array of 4-5 key deliverables.
     4. 'roadmap': Array of 3-4 phases with 'phase' and 'details'.
-    5. 'pricing': Object with 'amount' (e.g. '$15,000 - $25,000'), 'terms' (e.g. '50% upfront'), and 'notes'.
-    6. 'key_notes': Array of 3 important considerations or assumptions.
-    7. 'tech_stack': Object with 'backend' (array of 4 strings) and 'data' (array of 4 strings).
-    8. 'mermaid_diagram': A Mermaid.js 'graph LR' string representing the SPECIFIC architecture for this client/project. 
-       Use 'A["Client"] --> B["Service"]' format. Keep it clean and professional. Use line breaks carefully.
-    
-    Ensure the content is specific to the client's likely needs based on their name and project.
+    5. 'pricing': Object with:
+        - 'usd': String (e.g. '$20,000')
+        - 'inr': String (e.g. '₹16,50,000')
+        - 'terms': String
+        - 'breakdown': Array of objects with 'item' and 'cost' (show both USD and INR)
+    6. 'resources': Array of objects with 'role' and 'allocation' (e.g. 'Full-time', 'Part-time').
+    7. 'key_notes': Array of 3 important considerations.
+    8. 'tech_stack': Object with 'backend' (array) and 'data' (array).
+    9. 'mermaid_diagram': A simple, valid Mermaid.js 'graph TD' string. 
+       USE ONLY SIMPLE TEXT IN QUOTES. DO NOT USE SPECIAL CHARACTERS.
+       Example: 'graph TD\nA["Client"] --> B["API"]\nB --> C["Database"]'
     """
     try:
         response = client_ai.chat.completions.create(
@@ -79,7 +83,7 @@ def scrape_client(client_url):
         return client_data
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
-        resp = requests.get(client_url, headers=headers, timeout=10, allow_redirects=False)
+        resp = requests.get(client_url, headers=headers, timeout=10, allow_redirects=True)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
         title_tag = soup.find("title")
@@ -106,12 +110,27 @@ def generate_diagram(mermaid_code):
     os.makedirs("static", exist_ok=True)
     mmd_path = os.path.abspath("static/temp.mmd")
     out_path = os.path.abspath("static/architecture.png")
-    with open(mmd_path, "w") as f: f.write(mermaid_code)
+    
+    # Clean mermaid code to ensure it's valid for mmdc
+    cleaned_code = mermaid_code.strip()
+    if not cleaned_code.startswith(("graph", "flowchart", "sequenceDiagram", "classDiagram", "stateDiagram", "erDiagram", "gantt", "pie", "gitGraph")):
+        cleaned_code = "graph TD\n" + cleaned_code
+
+    with open(mmd_path, "w") as f: f.write(cleaned_code)
+    
     try:
-        subprocess.run(["npx", "-y", "@mermaid-js/mermaid-cli", "mmdc", "-i", mmd_path, "-o", out_path, "-b", "transparent"], 
-                       capture_output=True, timeout=60)
+        # Use npx directly with minimal flags. 
+        # Replit Nix environment can be restrictive, so we use a simple call.
+        cmd = ["npx", "-y", "@mermaid-js/mermaid-cli", "mmdc", "-i", mmd_path, "-o", out_path, "-b", "transparent", "--scale", "2"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        
+        if result.returncode != 0:
+            print(f"Mermaid CLI Error: {result.stderr}")
+            return False
         return os.path.exists(out_path)
-    except: return False
+    except Exception as e:
+        print(f"Diagram generation exception: {e}")
+        return False
 
 def build_proposal(client_url, project_name, app=None):
     client_data = scrape_client(client_url)
@@ -128,7 +147,10 @@ def build_proposal(client_url, project_name, app=None):
         "ai": ai_content
     }
     
-    with (app.app_context() if app else ExitStack()):
+    if app:
+        with app.app_context():
+            html = render_template("proposal.html", **template_data)
+    else:
         html = render_template("proposal.html", **template_data)
         
     with open("static/proposal.html", "w") as f: f.write(html)

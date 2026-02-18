@@ -12,16 +12,17 @@
         .accent-text { color: var(--client-color); }
         .accent-border { border-color: var(--client-color); }
         .gradient-hero { background: linear-gradient(135deg, var(--client-color) 0%, #1e293b 100%); }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
     <header class="bg-white border-b-4 accent-border sticky top-0 z-50 shadow-sm">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 {% if client.logo %}<img src="{{ client.logo }}" class="h-8 w-auto">{% endif %}
                 <span class="font-bold text-xl">{{ client.name }}</span>
             </div>
-            <span class="text-slate-300 text-2xl">&times;</span>
+            <span class="text-slate-300 text-2xl hidden md:block">&times;</span>
             <div class="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg">
                 <i class="fas fa-rocket text-sky-400"></i>
                 <span class="font-bold">{{ my_brand.name }}</span>
@@ -34,11 +35,11 @@
         <p class="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">{{ ai.hero_desc if ai else "Custom Architecture Proposal" }}</p>
     </section>
 
-    <main class="max-w-5xl mx-auto px-6 py-12 space-y-16">
+    <main class="max-w-6xl mx-auto px-6 py-12 space-y-16">
         {% if ai %}
         <section>
             <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-file-alt accent-text"></i> Executive Summary</h2>
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 leading-relaxed text-slate-700">
+            <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 leading-relaxed text-slate-700">
                 {{ ai.executive_summary }}
             </div>
         </section>
@@ -47,7 +48,7 @@
             <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-tasks accent-text"></i> Core Deliverables</h2>
             <div class="grid md:grid-cols-2 gap-4">
                 {% for item in ai.scope_of_work %}
-                <div class="bg-white p-4 rounded-xl border-l-4 accent-border shadow-sm flex items-center gap-3">
+                <div class="bg-white p-4 rounded-xl border-l-4 accent-border card-shadow flex items-center gap-3">
                     <i class="fas fa-check-circle accent-text"></i>
                     <span>{{ item }}</span>
                 </div>
@@ -56,25 +57,46 @@
         </section>
 
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-project-diagram accent-text"></i> Architecture</h2>
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-project-diagram accent-text"></i> Proposed Architecture</h2>
+            <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 text-center">
                 {% if diagram_available %}
-                <img src="/static/architecture.png?v={{ range(1,999) | random }}" class="w-full h-auto">
+                <img src="/static/architecture.png?v={{ range(1,999) | random }}" class="max-w-full h-auto mx-auto rounded-lg">
                 {% else %}
-                <p class="text-slate-400 text-center italic">Architecture diagram generating...</p>
+                <div class="py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                    <i class="fas fa-microchip text-4xl text-slate-300 mb-4"></i>
+                    <p class="text-slate-500 italic">Advanced Architecture Visualization in Progress...</p>
+                    <p class="text-xs text-slate-400 mt-2">Diagram is being optimized for your specific scale.</p>
+                </div>
                 {% endif %}
             </div>
         </section>
 
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-road accent-text"></i> Roadmap</h2>
-            <div class="space-y-4">
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-users accent-text"></i> Resource Planning</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for resource in ai.resources %}
+                <div class="bg-white p-6 rounded-xl card-shadow border border-slate-100">
+                    <div class="accent-bg text-white w-10 h-10 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h4 class="font-bold text-lg mb-1">{{ resource.role }}</h4>
+                    <p class="text-slate-500 text-sm">{{ resource.allocation }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-road accent-text"></i> Implementation Roadmap</h2>
+            <div class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
                 {% for step in ai.roadmap %}
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex gap-6">
-                    <div class="accent-bg text-white font-bold h-10 w-10 flex items-center justify-center rounded-full shrink-0">{{ loop.index }}</div>
-                    <div>
-                        <h4 class="font-bold text-lg">{{ step.phase }}</h4>
-                        <p class="text-slate-600">{{ step.details }}</p>
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-hover:bg-accent-bg text-slate-500 group-hover:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors duration-300">
+                        {{ loop.index }}
+                    </div>
+                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-6 rounded-xl card-shadow border border-slate-100">
+                        <h4 class="font-bold text-lg accent-text">{{ step.phase }}</h4>
+                        <p class="text-slate-600 mt-2">{{ step.details }}</p>
                     </div>
                 </div>
                 {% endfor %}
@@ -82,30 +104,68 @@
         </section>
 
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-file-invoice-dollar accent-text"></i> Investment</h2>
-            <div class="bg-slate-900 text-white p-8 rounded-2xl shadow-xl">
-                <div class="flex justify-between items-center mb-6">
-                    <span class="text-slate-400">Total Estimated Cost</span>
-                    <span class="text-4xl font-bold text-sky-400">{{ ai.pricing.amount }}</span>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-money-bill-wave accent-text"></i> Investment Details</h2>
+            <div class="bg-slate-900 text-white p-10 rounded-3xl shadow-2xl overflow-hidden relative">
+                <div class="absolute top-0 right-0 p-8 opacity-10">
+                    <i class="fas fa-file-invoice-dollar text-9xl"></i>
                 </div>
-                <div class="border-t border-slate-800 pt-6">
-                    <h4 class="font-bold mb-2">Payment Terms</h4>
-                    <p class="text-slate-400">{{ ai.pricing.terms }}</p>
+                <div class="grid md:grid-cols-2 gap-12 relative z-10">
+                    <div>
+                        <h4 class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Pricing Summary</h4>
+                        <div class="flex items-baseline gap-4 mb-2">
+                            <span class="text-5xl font-bold text-white">{{ ai.pricing.usd }}</span>
+                            <span class="text-slate-400">/ USD</span>
+                        </div>
+                        <div class="flex items-baseline gap-4 mb-6">
+                            <span class="text-3xl font-bold text-sky-400">{{ ai.pricing.inr }}</span>
+                            <span class="text-slate-400">/ INR</span>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-xl">
+                            <h5 class="font-bold mb-1">Terms</h5>
+                            <p class="text-slate-400 text-sm">{{ ai.pricing.terms }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Cost Breakdown</h4>
+                        <ul class="space-y-4">
+                            {% for item in ai.pricing.breakdown %}
+                            <li class="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <span class="text-slate-300">{{ item.item }}</span>
+                                <span class="font-mono text-sky-400 text-sm">{{ item.cost }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
             </div>
         </section>
 
         <section>
-            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-sticky-note accent-text"></i> Key Notes</h2>
-            <ul class="list-disc list-inside space-y-2 text-slate-700">
-                {% for note in ai.key_notes %}<li>{{ note }}</li>{% endfor %}
-            </ul>
+            <h2 class="text-3xl font-bold mb-6 flex items-center gap-3"><i class="fas fa-info-circle accent-text"></i> Key Notes & Assumptions</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                {% for note in ai.key_notes %}
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 relative overflow-hidden">
+                    <div class="absolute -top-2 -right-2 opacity-5">
+                        <i class="fas fa-quote-right text-6xl"></i>
+                    </div>
+                    <p class="text-slate-600 text-sm italic">"{{ note }}"</p>
+                </div>
+                {% endfor %}
+            </div>
         </section>
         {% endif %}
     </main>
 
-    <footer class="bg-slate-900 text-white py-12 px-6 text-center">
-        <p class="mb-4">Engineered by {{ my_brand.name }} Solutions. Visit <a href="{{ my_brand.website }}" class="text-sky-400">{{ my_brand.website }}</a></p>
+    <footer class="bg-slate-900 text-white py-16 px-6 text-center border-t border-slate-800">
+        <div class="max-w-6xl mx-auto">
+            <p class="text-slate-400 mb-6">Strategic Partnership Proposal by {{ my_brand.name }} Solutions</p>
+            <div class="flex justify-center gap-8 mb-8">
+                <a href="{{ my_brand.website }}" class="text-sky-400 hover:text-sky-300 transition"><i class="fas fa-globe mr-2"></i>sparktoship.com</a>
+                <span class="text-slate-700">|</span>
+                <span class="text-slate-400"><i class="fas fa-envelope mr-2"></i>solutions@sparktoship.com</span>
+            </div>
+            <p class="text-xs text-slate-600">&copy; 2026 {{ my_brand.name }}. All rights reserved.</p>
+        </div>
     </footer>
 </body>
 </html>
