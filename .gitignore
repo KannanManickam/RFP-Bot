@@ -22,3 +22,4 @@ static/proposals/
 .local/state/replit/agent/
 .env
 .agent/workflows/deploy-vps.md
+bot.log

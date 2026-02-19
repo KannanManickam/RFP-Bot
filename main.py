@@ -506,9 +506,9 @@ if bot:
             message,
             f"✅ Currency: *{escape_md2(currency_label)}*\n\n"
             "What is the estimated *scale* of this project?\n\n"
-            "🌱 `Small` (MVP, simple site/app)\n"
-            "🚀 `Medium` (Standard full-stack solution)\n"
-            "🏢 `High` (Enterprise, complex architecture)",
+            "🌱 `Small` \\(MVP, simple site/app\\)\n"
+            "🚀 `Medium` \\(Standard full\\-stack solution\\)\n"
+            "🏢 `High` \\(Enterprise, complex architecture\\)",
             parse_mode="MarkdownV2",
         )
 
