@@ -58,6 +58,8 @@ def refine_prompt(user_prompt, has_reference_images=False):
         f"Context: This image is being generated {context}."
     )
 
+    print(f"[ImageGen] Refining prompt: '{user_prompt}'", flush=True)
+
     try:
         response = client_ai.chat.completions.create(
             model=REFINE_MODEL,
@@ -69,15 +71,16 @@ def refine_prompt(user_prompt, has_reference_images=False):
         )
         refined = response.choices[0].message.content.strip().strip('"').strip("'")
         if refined and len(refined) > 3:
-            print(f"[ImageGen] Prompt refined: '{user_prompt}' -> '{refined}'")
+            print(f"[ImageGen] Prompt refined: '{user_prompt}' -> '{refined}'", flush=True)
             return refined, user_prompt
+        print(f"[ImageGen] Refinement returned empty/short, using original", flush=True)
         return user_prompt, user_prompt
     except Exception as e:
-        print(f"[ImageGen] Prompt refinement failed (using original): {e}")
+        print(f"[ImageGen] Prompt refinement failed (using original): {e}", flush=True)
         return user_prompt, user_prompt
 
 
-def generate_image_from_text(prompt, size="1024x1024", quality="auto"):
+def generate_image_from_text(prompt, size="1024x1024", quality="low"):
     """
     Generate an image from a text prompt only.
 
@@ -122,7 +125,7 @@ def generate_image_from_text(prompt, size="1024x1024", quality="auto"):
         return None
 
 
-def generate_image_with_references(prompt, image_data_list, size="1024x1024", quality="auto"):
+def generate_image_with_references(prompt, image_data_list, size="1024x1024", quality="low"):
     """
     Generate/edit an image using reference images + text prompt.
 
