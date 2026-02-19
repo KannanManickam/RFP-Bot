@@ -301,11 +301,32 @@ def generate_diagram(mermaid_code, output_dir="static"):
 
     # Convert literal \n strings to actual newlines (AI often returns them as escaped)
     cleaned_code = mermaid_code.strip()
+    
+    # Remove markdown code blocks if present
+    cleaned_code = re.sub(r'^```(?:mermaid)?', '', cleaned_code)
+    cleaned_code = re.sub(r'```$', '', cleaned_code)
+    
+    cleaned_code = cleaned_code.strip()
     cleaned_code = cleaned_code.replace("\\n", "\n")
+    
+    # Remove 'mermaid' keyword if it appears at the start
+    if cleaned_code.lower().startswith("mermaid"):
+        cleaned_code = cleaned_code[7:].strip()
 
     # Ensure graph TD is present
-    if not any(cleaned_code.startswith(t) for t in ["graph", "flowchart", "sequenceDiagram"]):
+    if not any(cleaned_code.startswith(t) for t in ["graph", "flowchart", "sequenceDiagram", "classDiagram", "erDiagram"]):
         cleaned_code = "graph TD\n" + cleaned_code
+        
+    # Extra safety: fix common syntax errors (like unquoted node names with spaces)
+    # This is a basic heuristic: A[Node Name] -> A["Node Name"]
+    # It finds patterns like [Some Text] and ensures it's ["Some Text"] if it contains spaces and isn't already quoted
+    def quote_node_label(match):
+        content = match.group(1)
+        if '"' not in content and (' ' in content or '(' in content or ')' in content):
+            return f'["{content}"]'
+        return f'[{content}]'
+        
+    cleaned_code = re.sub(r'\[([^\]]+)\]', quote_node_label, cleaned_code)
 
     with open(mmd_path, "w") as f:
         f.write(cleaned_code)
