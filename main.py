@@ -786,10 +786,16 @@ if bot:
                 img = Image.open(image_path)
                 if img.mode == "RGBA":
                     img = img.convert("RGB")
+                # Resize if too large for Telegram
+                max_side = 1024
+                if max(img.size) > max_side:
+                    img.thumbnail((max_side, max_side), Image.LANCZOS)
                 buf = io.BytesIO()
-                img.save(buf, format="JPEG", quality=80)
+                img.save(buf, format="JPEG", quality=60)
                 buf.seek(0)
                 buf.name = "generated.jpg"
+                size_kb = buf.getbuffer().nbytes // 1024
+                print(f"[Bot] Sending compressed image: {size_kb}KB", flush=True)
                 bot.send_photo(message.chat.id, buf, caption=caption, parse_mode="Markdown")
                 return
             except ImportError:
