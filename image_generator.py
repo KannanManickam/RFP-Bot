@@ -65,7 +65,7 @@ def refine_prompt(user_prompt, has_reference_images=False):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            max_tokens=200,
+            max_completion_tokens=200,
         )
         refined = response.choices[0].message.content.strip().strip('"').strip("'")
         if refined and len(refined) > 3:
