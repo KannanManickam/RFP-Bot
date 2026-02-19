@@ -20,11 +20,61 @@ MODEL = "gpt-image-1.5"
 GENERATED_DIR = os.path.join("static", "generated")
 MAX_REFERENCE_IMAGES = 5
 MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024  # 4MB per image (OpenAI limit)
+REFINE_MODEL = "gpt-5-nano"
 
 
 def _ensure_output_dir():
     """Ensure the generated images directory exists."""
     os.makedirs(GENERATED_DIR, exist_ok=True)
+
+
+def refine_prompt(user_prompt, has_reference_images=False):
+    """
+    Lightly refine the user's prompt for better image generation results.
+    Keeps it short, concise, and faithful to the original intent.
+
+    Returns:
+        tuple of (refined_prompt, original_prompt)
+    """
+    if not user_prompt or len(user_prompt.strip()) < 3:
+        return user_prompt, user_prompt
+
+    context = (
+        "with attached reference image(s)" if has_reference_images
+        else "from scratch"
+    )
+
+    system_prompt = (
+        "You are a prompt refiner for an AI image generator. "
+        "The user will give you a rough image description. "
+        "Your job is to LIGHTLY polish it into a better prompt.\n\n"
+        "RULES:\n"
+        "- Keep the SAME intent and subject — do NOT change what the user asked for.\n"
+        "- Keep it SHORT and concise (1-3 sentences max).\n"
+        "- Add subtle details like lighting, style, or composition ONLY if missing.\n"
+        "- Do NOT over-embellish or add elements the user didn't mention.\n"
+        "- Do NOT add quotation marks around your response.\n"
+        "- Return ONLY the refined prompt text, nothing else.\n\n"
+        f"Context: This image is being generated {context}."
+    )
+
+    try:
+        response = client_ai.chat.completions.create(
+            model=REFINE_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=200,
+        )
+        refined = response.choices[0].message.content.strip().strip('"').strip("'")
+        if refined and len(refined) > 3:
+            print(f"[ImageGen] Prompt refined: '{user_prompt}' -> '{refined}'")
+            return refined, user_prompt
+        return user_prompt, user_prompt
+    except Exception as e:
+        print(f"[ImageGen] Prompt refinement failed (using original): {e}")
+        return user_prompt, user_prompt
 
 
 def generate_image_from_text(prompt, size="1024x1024", quality="auto"):
@@ -41,9 +91,11 @@ def generate_image_from_text(prompt, size="1024x1024", quality="auto"):
         None on failure.
     """
     try:
+        refined_prompt, original_prompt = refine_prompt(prompt, has_reference_images=False)
+
         response = client_ai.images.generate(
             model=MODEL,
-            prompt=prompt,
+            prompt=refined_prompt,
             size=size,
             quality=quality,
             n=1,
@@ -63,7 +115,7 @@ def generate_image_from_text(prompt, size="1024x1024", quality="auto"):
                 print("[ImageGen] No image data in response")
                 return None
 
-        return _save_image(image_b64, prompt)
+        return _save_image(image_b64, original_prompt, refined_prompt)
 
     except Exception as e:
         print(f"[ImageGen] Text generation error: {e}")
@@ -88,6 +140,8 @@ def generate_image_with_references(prompt, image_data_list, size="1024x1024", qu
         return generate_image_from_text(prompt, size, quality)
 
     try:
+        refined_prompt, original_prompt = refine_prompt(prompt, has_reference_images=True)
+
         # Prepare image inputs as file-like objects for the API
         image_files = []
         for i, img_b64 in enumerate(image_data_list[:MAX_REFERENCE_IMAGES]):
@@ -101,7 +155,7 @@ def generate_image_with_references(prompt, image_data_list, size="1024x1024", qu
         response = client_ai.images.edit(
             model=MODEL,
             image=image_files if len(image_files) > 1 else image_files[0],
-            prompt=prompt,
+            prompt=refined_prompt,
             size=size,
             n=1,
         )
@@ -118,19 +172,19 @@ def generate_image_with_references(prompt, image_data_list, size="1024x1024", qu
                 print("[ImageGen] No image data in edit response")
                 return None
 
-        return _save_image(image_b64, prompt)
+        return _save_image(image_b64, original_prompt, refined_prompt)
 
     except Exception as e:
         print(f"[ImageGen] Reference image generation error: {e}")
         return None
 
 
-def _save_image(image_b64, prompt=""):
+def _save_image(image_b64, original_prompt="", refined_prompt=""):
     """
     Decode base64 image and save to disk.
 
     Returns:
-        dict with 'image_path', 'image_id', 'image_url'.
+        dict with 'image_path', 'image_id', 'image_url', 'prompt', 'refined_prompt'.
     """
     _ensure_output_dir()
 
@@ -148,7 +202,8 @@ def _save_image(image_b64, prompt=""):
         "image_id": image_id,
         "image_path": filepath,
         "image_url": f"/image/{image_id}",
-        "prompt": prompt[:200],  # Store truncated prompt for reference
+        "prompt": original_prompt[:200],
+        "refined_prompt": refined_prompt[:300],
     }
 
 

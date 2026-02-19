@@ -767,12 +767,15 @@ if bot:
         image_url = f"{base_url}{result.get('image_url', '')}"
         image_path = result.get("image_path", "")
         prompt = result.get("prompt", "")
+        refined = result.get("refined_prompt", "")
 
-        caption = (
-            f"\u2705 *Image generated!*\n\n"
-            f"\U0001f4dd Prompt: _{prompt}_\n"
-            f"\U0001f517 [View full image]({image_url})"
-        )
+        caption = f"\u2705 *Image generated!*\n\n"
+        if refined and refined != prompt:
+            caption += f"\U0001f4dd Prompt: _{prompt}_\n"
+            caption += f"\u2728 Refined: _{refined}_\n"
+        else:
+            caption += f"\U0001f4dd Prompt: _{prompt}_\n"
+        caption += f"\U0001f517 [View full image]({image_url})"
 
         if os.path.exists(image_path):
             try:
