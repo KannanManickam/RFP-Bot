@@ -768,11 +768,12 @@ if bot:
         image_path = result.get("image_path", "")
         prompt = result.get("prompt", "")
         refined = result.get("refined_prompt", "")
+        print(f"[Bot] Image result - Original: '{prompt}' | Refined: '{refined}'")
 
         caption = f"\u2705 *Image generated!*\n\n"
-        if refined and refined != prompt:
-            caption += f"\U0001f4dd Prompt: _{prompt}_\n"
-            caption += f"\u2728 Refined: _{refined}_\n"
+        if refined and refined.strip().lower() != prompt.strip().lower():
+            caption += f"\U0001f4dd Your prompt: _{prompt}_\n"
+            caption += f"\u2728 Enhanced: _{refined}_\n"
         else:
             caption += f"\U0001f4dd Prompt: _{prompt}_\n"
         caption += f"\U0001f517 [View full image]({image_url})"
