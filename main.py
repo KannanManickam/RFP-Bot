@@ -1,4 +1,5 @@
 import os
+import io
 import re
 import time
 import base64
@@ -780,11 +781,27 @@ if bot:
 
         if os.path.exists(image_path):
             try:
-                with open(image_path, "rb") as photo:
-                    bot.send_photo(message.chat.id, photo, caption=caption, parse_mode="Markdown")
+                # Compress to JPEG in memory for faster Telegram upload
+                from PIL import Image
+                img = Image.open(image_path)
+                if img.mode == "RGBA":
+                    img = img.convert("RGB")
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=80)
+                buf.seek(0)
+                buf.name = "generated.jpg"
+                bot.send_photo(message.chat.id, buf, caption=caption, parse_mode="Markdown")
                 return
+            except ImportError:
+                # Pillow not installed, send original PNG
+                try:
+                    with open(image_path, "rb") as photo:
+                        bot.send_photo(message.chat.id, photo, caption=caption, parse_mode="Markdown")
+                    return
+                except Exception as e:
+                    print(f"[Bot] Error sending generated image: {e}", flush=True)
             except Exception as e:
-                print(f"[Bot] Error sending generated image: {e}")
+                print(f"[Bot] Error sending generated image: {e}", flush=True)
 
         bot.reply_to(message, caption, parse_mode="Markdown")
 

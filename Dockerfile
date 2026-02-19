@@ -49,6 +49,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     gunicorn \
     openai \
     pdfplumber \
+    Pillow \
     python-dotenv \
     pytelegrambotapi \
     requests

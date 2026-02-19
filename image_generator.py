@@ -67,13 +67,16 @@ def refine_prompt(user_prompt, has_reference_images=False):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            max_completion_tokens=200,
         )
-        refined = response.choices[0].message.content.strip().strip('"').strip("'")
-        if refined and len(refined) > 3:
-            print(f"[ImageGen] Prompt refined: '{user_prompt}' -> '{refined}'", flush=True)
-            return refined, user_prompt
-        print(f"[ImageGen] Refinement returned empty/short, using original", flush=True)
+        print(f"[ImageGen] Refinement response: {response}", flush=True)
+        raw_content = response.choices[0].message.content
+        if raw_content:
+            refined = raw_content.strip().strip('"').strip("'")
+            if refined and len(refined) > 3:
+                print(f"[ImageGen] Prompt refined: '{user_prompt}' -> '{refined}'", flush=True)
+                return refined, user_prompt
+
+        print(f"[ImageGen] Refinement returned empty, using original", flush=True)
         return user_prompt, user_prompt
     except Exception as e:
         print(f"[ImageGen] Prompt refinement failed (using original): {e}", flush=True)
