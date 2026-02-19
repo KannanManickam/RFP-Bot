@@ -3,6 +3,7 @@ import re
 import time
 import threading
 import telebot
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -147,7 +148,7 @@ DASHBOARD_TEMPLATE = """
                         </div>
                     </div>
                     <div class="text-right hidden sm:block">
-                        <p class="text-charcoal/50 text-xs font-mono mb-1">{{ p.created_at[:10] if p.created_at else '' }}</p>
+                        <p class="text-charcoal/50 text-xs font-mono mb-1">{{ p.formatted_date }}</p>
                         <div class="inline-flex items-center gap-1 text-orange font-medium text-sm group">
                             <span>View Proposal</span>
                             <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
@@ -190,6 +191,17 @@ DASHBOARD_TEMPLATE = """
 @app.route("/")
 def index():
     proposals = load_proposals_index()
+    for p in proposals:
+        if p.get("created_at"):
+            try:
+                # Handle possible varying formats or just strict fromisoformat
+                dt = datetime.fromisoformat(p["created_at"])
+                p["formatted_date"] = dt.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                p["formatted_date"] = p["created_at"][:10]
+        else:
+            p["formatted_date"] = ""
+
     return render_template_string(DASHBOARD_TEMPLATE, proposals=proposals, brand=MY_BRAND), 200, {
         "Cache-Control": "no-cache"
     }
