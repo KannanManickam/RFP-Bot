@@ -769,20 +769,20 @@ if bot:
         prompt = result.get("prompt", "")
 
         caption = (
-            "\ud83c\udfa8 *Image generated\\!*\n\n"
-            f"\ud83d\udcdd Prompt: _{escape_md2(prompt)}_\n"
-            f"\ud83d\udd17 [View full image]({escape_md2(image_url)})"
+            f"\u2705 *Image generated!*\n\n"
+            f"\U0001f4dd Prompt: _{prompt}_\n"
+            f"\U0001f517 [View full image]({image_url})"
         )
 
         if os.path.exists(image_path):
             try:
                 with open(image_path, "rb") as photo:
-                    bot.send_photo(message.chat.id, photo, caption=caption, parse_mode="MarkdownV2")
+                    bot.send_photo(message.chat.id, photo, caption=caption, parse_mode="Markdown")
                 return
             except Exception as e:
                 print(f"[Bot] Error sending generated image: {e}")
 
-        bot.reply_to(message, caption, parse_mode="MarkdownV2")
+        bot.reply_to(message, caption, parse_mode="Markdown")
 
     # ─────────────────────────────────────────
     # Proposal generation & delivery
