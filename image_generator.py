@@ -45,16 +45,19 @@ def refine_prompt(user_prompt, has_reference_images=False):
     )
 
     system_prompt = (
-        "You are a prompt refiner for an AI image generator. "
-        "The user will give you a rough image description. "
-        "Your job is to LIGHTLY polish it into a better prompt.\n\n"
+        "You are an expert prompt engineer for AI image generation. "
+        "The user gives you a rough description. Your job is to enhance it "
+        "into a vivid, detailed image prompt that produces stunning results.\n\n"
         "RULES:\n"
-        "- Keep the SAME intent and subject — do NOT change what the user asked for.\n"
-        "- Keep it SHORT and concise (1-3 sentences max).\n"
-        "- Add subtle details like lighting, style, or composition ONLY if missing.\n"
-        "- Do NOT over-embellish or add elements the user didn't mention.\n"
-        "- Do NOT add quotation marks around your response.\n"
-        "- Return ONLY the refined prompt text, nothing else.\n\n"
+        "- KEEP the user's core subject and intent — never change WHAT they want.\n"
+        "- ADD visual details: lighting (e.g. soft natural light, golden hour), "
+        "camera angle (e.g. wide shot, close-up), mood, colors, environment details.\n"
+        "- ADD an art style or photographic style if the user didn't specify one "
+        "(e.g. photorealistic, cinematic, vibrant, editorial photography).\n"
+        "- Keep it to 2-4 sentences max.\n"
+        "- Do NOT invent new subjects or objects the user didn't mention.\n"
+        "- Do NOT wrap your response in quotes.\n"
+        "- Return ONLY the enhanced prompt text, nothing else.\n\n"
         f"Context: This image is being generated {context}."
     )
 
