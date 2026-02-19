@@ -98,7 +98,7 @@ def is_safe_url(url):
 
 def get_ai_content(client_name, project_name, client_url=None,
                    brief_requirement=None, detailed_requirement=None,
-                   currency="INR"):
+                   currency="INR", project_scale="Medium"):
     """Generate dynamic content for the proposal using AI."""
 
     # Build context sections
@@ -118,57 +118,98 @@ def get_ai_content(client_name, project_name, client_url=None,
 
     context_block = "\n\n".join(context_parts) if context_parts else "No additional context provided."
 
+    # Dynamic pricing configuration based on scale
+    scale_map = {
+        "Small": {
+            "INR": ("₹50,000", "₹2,50,000", "₹1,50,000"),
+            "USD": ("$1,000", "$5,000", "$3,000")
+        },
+        "Medium": {
+            "INR": ("₹3,00,000", "₹10,00,000", "₹6,50,000"),
+            "USD": ("$5,000", "$15,000", "$10,000")
+        },
+        "High": {
+            "INR": ("₹12,00,000", "₹50,00,000", "₹25,00,000"),
+            "USD": ("$20,000", "$100,000+", "$45,000")
+        }
+    }
+
+    scale_key = project_scale.capitalize() if project_scale else "Medium"
+    if scale_key not in scale_map:
+        scale_key = "Medium"
+
+    min_p, max_p, avg_p = scale_map[scale_key][currency]
+
     # Currency-specific pricing guidance
     if currency == "INR":
         pricing_guidance = (
-            "Use INR (Indian Rupees) ONLY for all pricing. Use the ₹ symbol. "
-            "A typical small-mid scale project in India ranges from ₹2,00,000 to ₹10,00,000. "
-            "Format amounts Indian style (e.g. ₹6,50,000)."
+            f"Use INR (Indian Rupees) ONLY. Use the ₹ symbol. "
+            f"This is a {scale_key.upper()} scale project. "
+            f"Typical range: {min_p} to {max_p}. Target around {avg_p} unless requirements dictate otherwise. "
+            "Format amounts Indian style (e.g., ₹6,50,000)."
         )
     else:
         pricing_guidance = (
-            "Use USD (US Dollars) ONLY for all pricing. Use the $ symbol. "
-            "A typical small-mid scale project ranges from $3,000 to $15,000. "
-            "Format amounts US style (e.g. $7,500)."
+            f"Use USD (US Dollars) ONLY. Use the $ symbol. "
+            f"This is a {scale_key.upper()} scale project. "
+            f"Typical range: {min_p} to {max_p}. Target around {avg_p} unless requirements dictate otherwise. "
+            "Format amounts US style (e.g., $7,500)."
         )
 
     prompt = f"""
-    Create a comprehensive technical proposal for a project named '{project_name}' for the client '{client_name}'.
+    You are an expert Solution Architect and Deal Closer for 'Sparktoship'.
+    Your goal is to write a WINNING technical proposal for a project named '{project_name}' for client '{client_name}'.
 
     CONTEXT PROVIDED:
     {context_block}
 
-    IMPORTANT GUIDELINES:
-    - {pricing_guidance}
-    - Use ONLY {currency} currency throughout. Do NOT show dual currencies.
-    - If a brief or detailed requirement is provided, tailor the proposal SPECIFICALLY to those requirements.
-    - The scope, deliverables, tech stack, roadmap, and pricing should all reflect the actual requirements described.
-    - Do NOT use generic boilerplate — make everything specific to this project.
-    - LEAN TEAM: Plan with the MINIMUM viable team. Prefer multi-skilled individuals who can cover multiple areas.
-      For small-mid projects, 2-3 people should suffice (e.g., 1 Full-stack Developer, 1 Tech Lead who also does architecture/DevOps).
-      Avoid listing separate roles for PM, QA, DevOps, etc. unless the project truly demands it. Keep it lean and cost-effective.
+    PROJECT SCALE: {scale_key}
+    PRICING GUIDANCE: {pricing_guidance}
 
-    Return a JSON object with:
-    1. 'project_title': A short, professional project name derived from the actual requirement (e.g. 'Quiz & Certification Platform', 'Self-Ordering Kiosk System'). Do NOT use generic names like 'Digital Transformation'.
-    2. 'hero_desc': A 1-2 sentence compelling description that references the actual project requirements.
-    3. 'executive_summary': A professional overview of the project goals, summarizing the client's needs and the proposed solution.
-    4. 'scope_of_work': Array of 4-5 key deliverables directly tied to the stated requirements.
-    5. 'roadmap': Array of 3-4 phases. Each phase has:
-        - 'phase': Name of the phase (e.g. 'Phase 1: Discovery & Architecture')
-        - 'duration': Duration string (e.g. '2 Weeks', '3 Weeks') — ALWAYS include this.
-        - 'details': Description of work done in this phase.
-    6. 'total_duration': Total project duration as a string (e.g. '10–12 Weeks').
-    7. 'pricing': Object with:
-        - 'total': String — the total project cost in {currency} ONLY (e.g. '{"₹6,50,000" if currency == "INR" else "$7,500"}')
-        - 'terms': String (e.g. '30% Advance, 40% Mid-way, 30% Deployment')
-        - 'breakdown': Array of objects with 'item' (string) and 'cost' (string in {currency} ONLY, e.g. '{"₹1,00,000" if currency == "INR" else "$1,200"}').
-          IMPORTANT: 'cost' MUST be a plain string like '{"₹1,00,000" if currency == "INR" else "$1,200"}', NOT a dict or object.
-    8. 'resources': Array of 2-3 lean team members. Each object has 'role' (string) and 'allocation' (string like 'Full-time', 'Part-time', 'As needed').
-    9. 'key_notes': Array of 3 important considerations specific to this project.
-    10. 'tech_stack': Object with 'backend' (array) and 'data' (array).
-    11. 'mermaid_diagram': A simple, valid Mermaid.js 'graph TD' string representing the architecture.
-       USE ONLY SIMPLE TEXT IN QUOTES.
-       Example: 'graph TD\\nA["User"] --> B["API"]\\nB --> C["DB"]'
+    INSTRUCTIONS:
+    1. **Be Consultant-First**: Don't just list features. Explain WHY they need it and HOW it solves a business problem.
+    2. **Tailored & Specific**: specific features, specific tech stack choices, specific roadmap steps. Avoid generic fluff.
+    3. **Dynamic Scope**:
+       - If {scale_key} == 'Small': Focus on MVP, speed to market, core features only.
+       - If {scale_key} == 'Medium': Balance robustness with speed. Standard professional web/mobile app features.
+       - If {scale_key} == 'High': Focus on scalability, security, microservices, enterprise-grade architecture.
+    4. **Pricing**:
+       - MUST be in {currency}.
+       - MUST align with the {scale_key} range provided ({min_p} - {max_p}).
+       - Provide a realistic breakdown (Design, Dev, QA, Deployment, etc.).
+    5. **Lean Team**:
+       - Suggest a tight, efficient team structure appropriate for {scale_key} scale.
+
+    OUTPUT FORMAT (JSON ONLY):
+    {{
+        "project_title": "Compelling, professional title (e.g., 'AI-Powered Logistics Platform')",
+        "hero_desc": "1-2 powerful sentences selling the vision.",
+        "executive_summary": "Professional summary of goals, needs, and solution (~3-4 sentences).",
+        "scope_of_work": ["Deliverable 1 with detail", "Deliverable 2...", "Deliverable 3...", "Deliverable 4...", "Deliverable 5..."],
+        "roadmap": [
+            {{ "phase": "Phase 1: Name", "duration": "X Weeks", "details": "Key activities..." }},
+            {{ "phase": "Phase 2: Name", "duration": "X Weeks", "details": "Key activities..." }}
+        ],
+        "total_duration": "e.g., '8–10 Weeks'",
+        "pricing": {{
+            "total": "Total Cost String (e.g., '₹6,50,000')",
+            "terms": "Payment terms (e.g., '40% Upfront, 30% Milestone, 30% Completion')",
+            "breakdown": [
+               {{ "item": "Phase/Feature Name", "cost": "Cost String" }}
+            ]
+        }},
+        "resources": [
+            {{ "role": "e.g., Sr. Full Stack Dev", "allocation": "Full-time" }}
+        ],
+        "key_notes": ["Note 1", "Note 2", "Note 3"],
+        "tech_stack": {{
+            "backend": ["Tech 1", "Tech 2"],
+            "frontend": ["Tech 1", "Tech 2"],
+            "data": ["Tech 1"],
+            "infrastructure": ["Tech 1"]
+        }},
+        "mermaid_diagram": "Simple graph TD string (e.g., 'graph TD\\nA[User] --> B[App]')"
+    }}
     """
     try:
         response = client_ai.chat.completions.create(
@@ -179,7 +220,16 @@ def get_ai_content(client_name, project_name, client_url=None,
         return json.loads(response.choices[0].message.content)
     except Exception as e:
         print(f"AI Error: {e}")
-        return None
+        # Fallback to gpt-5-mini if nano fails
+        try:
+             response = client_ai.chat.completions.create(
+                model="gpt-5-mini",
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"}
+            )
+             return json.loads(response.choices[0].message.content)
+        except Exception:
+            return None
 
 
 def scrape_client(client_url):
@@ -291,7 +341,7 @@ def generate_diagram(mermaid_code, output_dir="static"):
 
 def build_proposal(client_name=None, client_url=None, project_name=None,
                    brief_requirement=None, detailed_requirement=None,
-                   currency="INR", app=None):
+                   currency="INR", project_scale="Medium", app=None):
     """
     Build a proposal and save it with a unique ID.
 
@@ -302,6 +352,7 @@ def build_proposal(client_name=None, client_url=None, project_name=None,
         brief_requirement: Short project description from client
         detailed_requirement: Extracted text from uploaded/linked document
         currency: Preferred currency ('INR' or 'USD')
+        project_scale: Scale of the project ('Small', 'Medium', 'High')
         app: Flask app instance for template rendering
 
     Returns:
@@ -325,7 +376,8 @@ def build_proposal(client_name=None, client_url=None, project_name=None,
         client_url=client_url,
         brief_requirement=brief_requirement,
         detailed_requirement=detailed_requirement,
-        currency=currency
+        currency=currency,
+        project_scale=project_scale
     )
 
     # Use AI-generated project title if no explicit name was given

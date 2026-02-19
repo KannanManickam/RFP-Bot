@@ -28,6 +28,7 @@ SESSION_TIMEOUT = 30 * 60  # 30 minutes
 STEP_AWAITING_CLIENT_INFO = "awaiting_client_info"
 STEP_AWAITING_BRIEF = "awaiting_brief"
 STEP_AWAITING_CURRENCY = "awaiting_currency"
+STEP_AWAITING_SCALE = "awaiting_scale"
 STEP_AWAITING_DOCUMENT = "awaiting_document"
 
 user_sessions = {}
@@ -57,6 +58,7 @@ def create_session(chat_id):
             "brief_requirement": None,
             "detailed_requirement": None,
             "currency": "INR",
+            "project_scale": "Medium",
             "last_active": time.time(),
         }
         return user_sessions[chat_id]
@@ -409,7 +411,11 @@ if bot:
         elif session["step"] == STEP_AWAITING_CURRENCY:
             _handle_currency(message, session, text)
 
-        # ── Step 4: Detailed document ──
+        # ── Step 4: Project Scale ──
+        elif session["step"] == STEP_AWAITING_SCALE:
+            _handle_scale(message, session, text)
+
+        # ── Step 5: Detailed document ──
         elif session["step"] == STEP_AWAITING_DOCUMENT:
             _handle_document_step(message, session, text)
 
@@ -494,11 +500,34 @@ if bot:
             return
 
         currency_label = "₹ INR" if session["currency"] == "INR" else "$ USD"
-        session["step"] = STEP_AWAITING_DOCUMENT
+        session["step"] = STEP_AWAITING_SCALE
 
         bot.reply_to(
             message,
             f"✅ Currency: *{escape_md2(currency_label)}*\n\n"
+            "What is the estimated *scale* of this project?\n\n"
+            "🌱 `Small` (MVP, simple site/app)\n"
+            "🚀 `Medium` (Standard full-stack solution)\n"
+            "🏢 `High` (Enterprise, complex architecture)",
+            parse_mode="MarkdownV2",
+        )
+
+    def _handle_scale(message, session, text):
+        """Capture project scale."""
+        choice = text.strip().lower()
+        if "small" in choice:
+            session["project_scale"] = "Small"
+        elif "high" in choice or "large" in choice or "enterprise" in choice:
+            session["project_scale"] = "High"
+        else:
+            session["project_scale"] = "Medium"
+
+        scale_label = session["project_scale"]
+        session["step"] = STEP_AWAITING_DOCUMENT
+
+        bot.reply_to(
+            message,
+            f"✅ Scale: *{scale_label}*\n\n"
             "Do you have a *detailed requirement document*?\n\n"
             "📄 *Upload a file* \\(\\.txt, \\.md, \\.pdf\\)\n"
             "🔗 *Share a link* \\(Google Drive, Dropbox, etc\\.\\)\n"
@@ -565,6 +594,7 @@ if bot:
                 brief_requirement=session.get("brief_requirement"),
                 detailed_requirement=session.get("detailed_requirement"),
                 currency=session.get("currency", "INR"),
+                project_scale=session.get("project_scale", "Medium"),
                 app=app
             )
             _send_proposal_result(message, result)
