@@ -54,13 +54,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
     requests
 
 # Copy application code
-COPY main.py generator.py document_parser.py puppeteer_config.json ./
+COPY main.py generator.py document_parser.py image_generator.py puppeteer_config.json ./
 COPY templates/ templates/
 COPY static/ static/
 COPY public/ static/
 
 # Create static directories
-RUN mkdir -p static/proposals
+RUN mkdir -p static/proposals static/generated
 
 # Expose port
 EXPOSE 8080
