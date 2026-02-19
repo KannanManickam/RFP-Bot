@@ -1,145 +1,402 @@
-# 🚀 Deal-Closer Bot
+<div align="center">
 
-> **Your AI-Powered Sales Proposal Generator**  
-> _Turn client briefs into professional, comprehensive technical proposals in minutes._
+# 🤖 SparkToShip Bot
 
-![Project Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
-![Python Version](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square)
+### *AI-Powered Proposal Generation · Image Creation · Client Intelligence — All from Telegram*
 
-The **Deal-Closer Bot** is an intelligent automation tool designed to streamline the sales process for technical agencies and freelancers. By interacting with a Telegram bot, users can provide client details, project briefs, and even upload detailed requirement documents (PDF/TXT). The bot then leverages AI to generate a full-fledged HTML proposal complete with pricing, roadmap, team structure, and an architecture diagram.
+**[🌐 sparktoship.com](https://www.sparktoship.com/)**
+
+<br/>
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.1+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT%20Powered-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
+[![Telegram](https://img.shields.io/badge/Telegram-Bot-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/bots)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![Status](https://img.shields.io/badge/Status-Active-22c55e?style=for-the-badge)](.)
+
+<br/>
+
+> 📄 **Generate professional technical proposals** from a simple brief — complete with pricing, roadmaps & architecture diagrams.
+>
+> 🎨 **Create & edit AI images** from text prompts or reference photos — all without leaving Telegram.
+>
+> 🔗 **[www.sparktoship.com](https://www.sparktoship.com/)**
+
+<br/>
+
+[✨ Features](#-features) · [📄 Proposals](#-ai-generated-proposals) · [🎨 Image Generation](#-ai-image-generation) · [🚀 Quick Start](#-quick-start) · [🤖 Bot Commands](#-bot-commands) · [🐳 Deployment](#-deployment)
+
+</div>
+
+---
+
+## 🌟 What is SparkToShip Bot?
+
+The **SparkToShip Bot** is a multi-capability AI assistant built for technical agencies and freelancers, part of [**SparkToShip**](https://www.sparktoship.com/) — a Solution Architecture & Engineering studio. It lives entirely inside **Telegram** and handles two powerful workflows:
+
+| Capability | What it does |
+|---|---|
+| 📄 **Proposal Generation** | Turns a client URL + brief into a fully-structured HTML proposal with pricing, roadmap, team plan, tech stack & architecture diagram — in minutes |
+| 🎨 **AI Image Generation** | Generates stunning images from text prompts, or edits/transforms your photos using reference images — powered by OpenAI's image model |
+
+No complex tools, no dashboards to fight with — just a natural conversation in Telegram.
 
 ---
 
 ## ✨ Features
 
-- **🤖 Interactive Telegram Bot**: Guided conversation flow to collect project requirements effortlessly.
-- **📄 AI-Generated Proposals**: Creates detailed, professional HTML proposals tailored to each client.
-- **Iy Convert Briefs to Plans**: Takes simple text briefs or uploaded documents and expands them into full scopes of work.
-- **🕸️ Client Intelligence**: Automatically scrapes client websites to extract branding, logos, and color schemes for personalized proposals.
-- **📊 Automated Architecture Diagrams**: Generates system architecture diagrams using Mermaid.js and embeds them directly into the proposal.
-- **🗄️ Centralized Web Dashboard**: A sleek, dark-mode dashboard to view, manage, and share all generated proposals.
-- **💰 Smart Pricing**: Supports both **INR (₹)** and **USD ($)** with context-aware pricing models.
-- **📂 Document Parsing**: Supports uploading requirement files (`.pdf`, `.txt`, `.md`) for deep analysis.
+### 🤖 Intelligent Telegram Bot
+- Conversational, step-by-step **guided proposal flow** via Telegram
+- **Quick-pitch mode**: start a proposal with a single command
+- 30-minute session management with automatic cleanup
+- Context-aware, MarkdownV2-formatted responses
+
+### 📄 AI-Generated Proposals
+- Powered by **OpenAI GPT models** for intelligent, context-aware content generation
+- Tailored output based on project **scale** (Small / Medium / Enterprise)
+- Generates: Executive Summary, Scope of Work, Delivery Roadmap, Team Structure, Pricing Breakdown, Tech Stack Recommendations, and Key Notes
+- Automatic fallback from primary to secondary model on failures
+
+### 🌐 Client Intelligence Engine
+- **Auto-scrapes client websites** to extract: brand name, logo, and theme color
+- Personalizes proposals using real client branding — `og:image`, favicon, and theme-color meta tags
+- SSRF-protected: validates all URLs against private IPs before fetching
+
+### 📊 Automated Architecture Diagrams
+- Each proposal gets a **unique Mermaid.js system architecture diagram**, generated by AI
+- Diagram is rendered server-side via **Puppeteer + `mmdc` CLI** and embedded as a PNG
+- Graceful fallback to client-side Mermaid rendering if server-side rendering fails
+- Intelligent Mermaid syntax cleanup and auto-quoting of complex node labels
+
+### 🎨 AI Image Generation
+- Generate images from text prompts via the `/image` bot command
+- Supports **reference image uploads** (up to 5 photos) for guided generation/editing
+- AI-powered **prompt refinement** to enhance image quality automatically
+- Images are compressed and optimized before sending via Telegram
+
+### 🗄️ Web Dashboard
+- Sleek, animated proposal dashboard at the root URL
+- Lists all generated proposals with client name, project title, and creation timestamp
+- Individual proposals served at unique URLs: `/proposal/<proposal-id>`
+- Built with **TailwindCSS**, **Space Grotesk**, and **Inter** fonts
+
+### 💰 Smart Multi-Currency Pricing
+- Supports **INR (₹)** and **USD ($)** pricing
+- Three project scales with realistic pricing bands:
+
+  | Scale | INR Range | USD Range |
+  |-------|-----------|-----------|
+  | 🌱 Small | ₹50K – ₹2.5L | $1K – $5K |
+  | 🚀 Medium | ₹3L – ₹10L | $5K – $15K |
+  | 🏢 Enterprise | ₹12L – ₹50L | $20K – $100K+ |
+
+### 📂 Document Parsing
+- Upload requirement documents via Telegram: `.pdf`, `.txt`, `.md`
+- Share a **public link** (Google Drive, Dropbox, etc.) instead of uploading
+- Extracted text is fed into the AI for deeply contextual proposal generation
+- Supports PDF text extraction via **pdfplumber**
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python (Flask)
-- **Bot Interface**: [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI)
-- **AI Engine**: OpenAI API (GPT Models)
-- **Frontend**: HTML5, TailwindCSS
-- **Diagramming**: Mermaid.js & Puppeteer (for image generation)
-- **Infrastructure**: Docker, Gunicorn
+| Layer | Technology |
+|-------|------------|
+| **Language** | Python 3.11+ |
+| **Web Framework** | Flask + Gunicorn |
+| **Bot Interface** | pyTelegramBotAPI |
+| **AI / LLM** | OpenAI API (GPT models) |
+| **Image Generation** | OpenAI `gpt-image-1.5` |
+| **Diagramming** | Mermaid.js + Puppeteer (`mmdc` CLI) |
+| **Frontend** | HTML5, TailwindCSS, Font Awesome |
+| **PDF Parsing** | pdfplumber |
+| **Image Processing** | Pillow |
+| **Containerization** | Docker (multi-stage) |
+| **Web Scraping** | BeautifulSoup4, Requests |
+| **Deps Management** | `uv` (recommended) |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js & npm (for Mermaid CLI)
-- A Telegram Bot Token (via [@BotFather](https://t.me/botfather))
-- OpenAI API Key
+- **Python 3.11+**
+- **Node.js 18+** & npm (for Mermaid diagram generation)
+- A [Telegram Bot Token](https://t.me/botfather) from @BotFather
+- An **OpenAI API Key**
 
-### Installation
+### 1. Clone the Repository
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Deal-Closer-Bot
-   ```
+```bash
+git clone <repository-url>
+cd Deal-Closer-Bot
+```
 
-2. **Install Python Dependencies**
-   This project uses `uv` for dependency management, but you can also use pip.
-   ```bash
-   # Using uv (recommended)
-   uv sync
+### 2. Install Python Dependencies
 
-   # Or using pip
-   pip install -r pyproject.toml
-   ```
+```bash
+# Recommended: using uv (fast, reliable)
+uv sync
 
-3. **Install Node.js Dependencies** (for diagram generation)
-   ```bash
-   npm install
-   ```
+# Alternative: using pip
+pip install beautifulsoup4 flask gunicorn openai pdfplumber Pillow python-dotenv pytelegrambotapi requests
+```
 
-4. **Environment Configuration**
-   Create a `.env` file in the root directory:
-   ```bash
-   cp .env.example .env  # if example exists, otherwise create new
-   ```
-   Add the following variables:
-   ```env
-   TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-   AI_INTEGRATIONS_OPENAI_API_KEY=your_openai_api_key
-   APP_DOMAIN=your-domain.com  # Optional: for production URL generation
-   ```
+### 3. Install Node.js Dependencies
 
-### Running the Application
+```bash
+# Required for server-side Mermaid diagram rendering
+npm install
+```
 
-Start the Flask server and Bot poller:
+### 4. Configure Environment
+
+Create a `.env` file in the project root:
+
+```env
+# ── Required ──────────────────────────────────────────────
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+AI_INTEGRATIONS_OPENAI_API_KEY=your_openai_api_key_here
+
+# ── Optional ──────────────────────────────────────────────
+AI_INTEGRATIONS_OPENAI_BASE_URL=https://api.openai.com/v1   # custom base URL if needed
+APP_DOMAIN=your-domain.com                                   # for production URL links in bot messages
+```
+
+### 5. Run the Application
 
 ```bash
 python main.py
 ```
 
-The server will start at `http://localhost:8080`.
+The server starts at **http://localhost:8080** and the bot begins polling Telegram for messages.
 
 ---
 
-## 💡 Usage
+## 🤖 Bot Commands
 
-### 1. Start a Pitch via Telegram
-Send `/start` to your bot, then use the `/pitch` command.
+Once your bot is running, these commands are available in Telegram:
 
-- **Guided Mode**:
-  Type `/pitch` and follow the prompts.
-  1. Enter Client Name & Website.
-  2. Provide a brief (or skip).
-  3. Choose Currency (INR/USD).
-  4. Upload a requirement document (or skip).
+| Command | Description |
+|---------|-------------|
+| `/start` or `/help` | Show the welcome message and list all available commands |
+| `/pitch` | Start a **guided**, step-by-step proposal session |
+| `/pitch <url> [Project Name]` | **Quick mode** — jump straight to AI generation with a client URL |
+| `/proposals` | List the 10 most recently generated proposals with links |
+| `/image` | Open an AI image generation session |
+| `/cancel` | Cancel the current active session (pitch or image) |
 
-- **Quick Mode**:
-  Type `/pitch https://client-website.com Project Name`
+### 📝 Guided Proposal Flow (`/pitch`)
 
-### 2. View Proposal
-Once processing is complete, the bot will send you:
-- A link to the **Web View** of the proposal.
-- An image of the **System Architecture**.
+```
+1. Client Name + Website URL  →  (e.g., "Acme Corp https://acme.com")
+2. Project Brief              →  (100 words or less)
+3. Currency                   →  INR or USD
+4. Project Scale              →  Small / Medium / High
+5. Requirement Document       →  Upload .pdf/.txt/.md, share a link, or skip
+```
 
-### 3. Dashboard
-Visit the root URL (e.g., `http://localhost:8080/`) to see a dashboard of all generated proposals.
+The bot then generates and sends you a link to the finished proposal.
+
+### 🎨 Image Flow (`/image`)
+
+```
+Option A — Text Only:
+  Send a text prompt → AI enhances it → Image generated
+
+Option B — Reference Photos + Caption:
+  Send photo(s) with a caption → AI edits/transforms using references
+
+Option C — Photos First, Then Prompt:
+  Send photo(s) → Bot asks for prompt → Image generated
+```
 
 ---
 
-## 📂 Project Structure
+## 🏗️ Architecture
 
 ```
 Deal-Closer-Bot/
-├── main.py                 # Application entry point (Flask + Bot)
-├── generator.py            # Proposal generation logic & AI integration
-├── document_parser.py      # File upload & URL parsing logic
-├── templates/              # HTML templates
-│   └── proposal.html       # The proposal template
-├── static/                 # Static assets
-│   └── proposals/          # Generated proposals storage
-├── pyproject.toml          # Python dependencies
-├── package.json            # Node.js dependencies
-└── Dockerfile              # Container configuration
+├── main.py                  # 🧠 App entry: Flask server + Telegram bot + session logic
+├── generator.py             # 📝 Proposal engine: AI content, web scraping, Mermaid diagrams
+├── image_generator.py       # 🎨 Image generation: text-to-image + reference-based editing
+├── document_parser.py       # 📂 File parsing: PDF/TXT/MD upload + URL fetching
+│
+├── templates/
+│   └── proposal.html        # 📋 Jinja2 HTML proposal template (TailwindCSS styled)
+│
+├── static/
+│   ├── proposals/           # 📁 Generated proposals (one folder per proposal ID)
+│   │   ├── <proposal-id>/
+│   │   │   ├── proposal.html
+│   │   │   └── architecture.png
+│   │   └── index.json       # 🗃️ Proposals index (newest-first)
+│   └── generated/           # 🖼️ AI-generated images
+│
+├── public/                  # Static assets (copied to /static/ at build time)
+├── Dockerfile               # 🐳 Multi-stage Docker build
+├── docker-compose.yml       # 🐳 Docker Compose configuration
+├── pyproject.toml           # 🐍 Python dependencies
+└── package.json             # 📦 Node.js dependencies (Mermaid CLI)
+```
+
+### How a Proposal is Generated
+
+```
+User sends /pitch
+      │
+      ▼
+Collect client info → Scrape client website (name, logo, color)
+      │
+      ▼
+AI generates structured JSON →  Executive Summary, Scope, Roadmap,
+                                 Pricing, Team, Tech Stack, Mermaid Code
+      │
+      ├──► Server-side rendering: mmdc CLI → architecture.png
+      │           (fallback: client-side Mermaid in browser)
+      │
+      ▼
+Render proposal.html (Jinja2) → Save to /static/proposals/<id>/
+      │
+      ▼
+Update index.json → Send proposal URL to Telegram user
+```
+
+---
+
+## 🐳 Deployment
+
+### Docker (Recommended)
+
+The project uses a **multi-stage Docker build** — Node.js in Stage 1 for Mermaid, Python in Stage 2 for the app.
+
+```bash
+# Build the image
+docker build -t deal-closer-bot .
+
+# Run with environment variables
+docker run -d \
+  -p 8080:8080 \
+  -e TELEGRAM_BOT_TOKEN=your_token \
+  -e AI_INTEGRATIONS_OPENAI_API_KEY=your_key \
+  -e APP_DOMAIN=your-domain.com \
+  --name deal-closer-bot \
+  deal-closer-bot
+```
+
+### Docker Compose
+
+```bash
+# Start with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+Edit `docker-compose.yml` to set your environment variables before running.
+
+### VPS with Nginx (Production)
+
+For production deployment behind Nginx (SSL + reverse proxy):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 120s;
+    }
+}
+```
+
+> 💡 **Tip**: Use `certbot` to obtain free SSL certificates from Let's Encrypt.
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Proposal dashboard (lists all proposals) |
+| `GET` | `/proposal` | Redirects to dashboard |
+| `GET` | `/proposal/<id>` | View a specific proposal by its unique ID |
+| `GET` | `/image/<id>` | Serve a generated AI image by its unique ID |
+| `GET` | `/static/<path>` | Serve static assets (logos, proposal images, etc.) |
+
+---
+
+## ⚙️ Configuration Reference
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TELEGRAM_BOT_TOKEN` | ✅ Yes | Your Telegram bot token from [@BotFather](https://t.me/botfather) |
+| `AI_INTEGRATIONS_OPENAI_API_KEY` | ✅ Yes | OpenAI API key for GPT and image generation |
+| `AI_INTEGRATIONS_OPENAI_BASE_URL` | ❌ Optional | Custom OpenAI-compatible API base URL |
+| `APP_DOMAIN` | ❌ Recommended | Your server's domain for generating proposal links in bot messages |
+
+---
+
+## 🔒 Security
+
+- **SSRF Protection**: All client URLs are validated against private, loopback, reserved, and link-local IP ranges before fetching.
+- **File validation**: Only `.pdf`, `.txt`, and `.md` files are accepted; maximum size is 5MB per upload.
+- **Image validation**: Reference images are capped at 4MB each, up to 5 images per session.
+- **Session isolation**: Each Telegram user gets an isolated session with a 30-minute inactivity timeout.
+
+---
+
+## 📋 Requirements
+
+```toml
+# Python (pyproject.toml)
+beautifulsoup4 >= 4.14.3
+flask >= 3.1.2
+gunicorn >= 25.1.0
+openai >= 2.21.0
+pdfplumber >= 0.11.0
+Pillow >= 10.0.0
+python-dotenv >= 1.0.0
+pytelegrambotapi >= 4.31.0
+requests >= 2.32.5
+```
+
+```json
+// Node.js (package.json)
+"@mermaid-js/mermaid-cli": "latest"
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Here's how to get started:
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Commit** your changes: `git commit -m 'Add amazing feature'`
+4. **Push** to the branch: `git push origin feature/amazing-feature`
+5. **Open** a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**.
+
+---
+
+<div align="center">
+
+Built with ❤️ by [**SparkToShip**](https://www.sparktoship.com/) · *Solution Architecture & Engineering*
+
+</div>
