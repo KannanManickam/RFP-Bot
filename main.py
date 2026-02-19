@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import base64
 import threading
 import telebot
 from datetime import datetime
@@ -11,6 +12,12 @@ from flask import Flask, send_from_directory, send_file, render_template_string,
 
 from generator import build_proposal, load_proposals_index, MY_BRAND
 from document_parser import parse_uploaded_file, fetch_remote_document
+from image_generator import (
+    generate_image_from_text,
+    generate_image_with_references,
+    validate_image_size,
+    MAX_REFERENCE_IMAGES,
+)
 
 app = Flask(__name__)
 
@@ -31,6 +38,10 @@ STEP_AWAITING_BRIEF = "awaiting_brief"
 STEP_AWAITING_CURRENCY = "awaiting_currency"
 STEP_AWAITING_SCALE = "awaiting_scale"
 STEP_AWAITING_DOCUMENT = "awaiting_document"
+
+# Image generation session steps
+STEP_IMAGE_AWAITING_PROMPT = "image_awaiting_prompt"
+STEP_IMAGE_AWAITING_PROMPT_FOR_PHOTOS = "image_awaiting_prompt_for_photos"
 
 user_sessions = {}
 sessions_lock = threading.Lock()
@@ -233,6 +244,15 @@ def serve_static(filename):
     return send_from_directory("static", filename), 200, {"Cache-Control": "no-cache"}
 
 
+@app.route("/image/<image_id>")
+def view_generated_image(image_id):
+    """Serve a generated image by its unique ID."""
+    image_path = os.path.join("static", "generated", f"{image_id}.png")
+    if os.path.exists(image_path):
+        return send_file(image_path), 200, {"Cache-Control": "no-cache"}
+    abort(404)
+
+
 # ─────────────────────────────────────────────
 # Telegram Bot Handlers
 # ─────────────────────────────────────────────
@@ -256,12 +276,13 @@ if bot:
     def handle_start(message):
         bot.reply_to(
             message,
-            "🚀 *Welcome to Sparktoship Proposal Generator\\!*\n\n"
+            "🚀 *Welcome to Sparktoship Bot\\!*\n\n"
             "Available commands:\n\n"
             "📝 `/pitch` — Start creating a new proposal \\(guided\\)\n"
+            "🎨 `/image` — Generate an AI image from text \\& photos\n"
             "📋 `/proposals` — View all generated proposals\n"
-            "❌ `/cancel` — Cancel current pitch session\n\n"
-            "_You can also use the quick format:_\n"
+            "❌ `/cancel` — Cancel current session\n\n"
+            "_Quick format for proposals:_\n"
             "`/pitch https://example\\.com Project Name`",
             parse_mode="MarkdownV2",
         )
@@ -331,6 +352,105 @@ if bot:
             "_No website:_ `Acme Corp skip`",
             parse_mode="MarkdownV2",
         )
+
+    # ─────────────────────────────────────────
+    # /image command handler
+    # ─────────────────────────────────────────
+
+    @bot.message_handler(commands=["image"])
+    def handle_image_command(message):
+        """Start an image generation session."""
+        # Create a dedicated image session
+        with sessions_lock:
+            user_sessions[message.chat.id] = {
+                "step": STEP_IMAGE_AWAITING_PROMPT,
+                "type": "image",
+                "reference_images": [],
+                "prompt": None,
+                "last_active": time.time(),
+            }
+
+        bot.reply_to(
+            message,
+            "🎨 *Image Generator*\n\n"
+            "Send me a prompt describing the image you want\\.\n\n"
+            "You can also *attach reference photos* along with a text caption "
+            "to guide the generation\\.\n\n"
+            "📝 _Text only_ → Generate from scratch\n"
+            "🖼 _Photo\\(s\\) \\+ caption_ → Edit/transform using references\n\n"
+            "Type `/cancel` to exit\\.",
+            parse_mode="MarkdownV2",
+        )
+
+    # ─────────────────────────────────────────
+    # Photo upload handler (for /image flow)
+    # ─────────────────────────────────────────
+
+    @bot.message_handler(content_types=["photo"])
+    def handle_photo_upload(message):
+        """Handle photo uploads — used for /image reference images."""
+        session = get_session(message.chat.id)
+
+        if not session or session.get("type") != "image":
+            bot.reply_to(
+                message,
+                "🖼 To use photos for image generation, first send /image"
+            )
+            return
+
+        if session["step"] not in (STEP_IMAGE_AWAITING_PROMPT, STEP_IMAGE_AWAITING_PROMPT_FOR_PHOTOS):
+            return
+
+        # Get the largest available photo resolution
+        photo = message.photo[-1]  # Telegram sends multiple sizes, last is largest
+
+        # Validate size
+        if photo.file_size and not validate_image_size(photo.file_size):
+            bot.reply_to(message, "⚠️ Image too large. Maximum size is 4MB per image.")
+            return
+
+        # Check reference image limit
+        if len(session["reference_images"]) >= MAX_REFERENCE_IMAGES:
+            bot.reply_to(
+                message,
+                f"⚠️ Maximum {MAX_REFERENCE_IMAGES} reference images allowed. "
+                "Please send your text prompt now."
+            )
+            return
+
+        try:
+            file_info = bot.get_file(photo.file_id)
+            downloaded = bot.download_file(file_info.file_path)
+            img_b64 = base64.b64encode(downloaded).decode("utf-8")
+            session["reference_images"].append(img_b64)
+
+            caption = message.caption.strip() if message.caption else None
+
+            if caption:
+                # Photo(s) with caption → generate immediately
+                session["prompt"] = caption
+                count = len(session["reference_images"])
+                bot.reply_to(
+                    message,
+                    f"🖼 Got {count} reference image{'s' if count > 1 else ''} + prompt\n"
+                    f"⏳ Generating your image... Please wait."
+                )
+                _generate_and_send_image(message, session)
+            else:
+                # Photo without caption — ask for prompt
+                count = len(session["reference_images"])
+                session["step"] = STEP_IMAGE_AWAITING_PROMPT_FOR_PHOTOS
+                bot.reply_to(
+                    message,
+                    f"🖼 Got {count} reference image{'s' if count > 1 else ''}\\!\n\n"
+                    f"Now send me a *text prompt* describing what you want to create "
+                    f"using {'these images' if count > 1 else 'this image'}\\.\n\n"
+                    f"_You can also send more photos \\(up to {MAX_REFERENCE_IMAGES}\\)\\._",
+                    parse_mode="MarkdownV2",
+                )
+
+        except Exception as e:
+            bot.reply_to(message, f"❌ Error processing photo: {str(e)}")
 
     # ─────────────────────────────────────────
     # Document upload handler
@@ -408,7 +528,14 @@ if bot:
         # Allow cancel at any step
         if text.lower() in ("/cancel", "cancel"):
             clear_session(message.chat.id)
-            bot.reply_to(message, "❌ Pitch session cancelled.")
+            session_type = session.get("type", "pitch")
+            label = "Image" if session_type == "image" else "Pitch"
+            bot.reply_to(message, f"❌ {label} session cancelled.")
+            return
+
+        # ── Image generation flow ──
+        if session.get("type") == "image":
+            _handle_image_text(message, session, text)
             return
 
         # ── Step 1: Client name & website ──
@@ -591,6 +718,71 @@ if bot:
                 "⏭ Type `skip` to proceed without it",
                 parse_mode="MarkdownV2",
             )
+
+    # ─────────────────────────────────────────
+    # Image generation text handler & delivery
+    # ─────────────────────────────────────────
+
+    def _handle_image_text(message, session, text):
+        """Handle text input during an image generation session."""
+        if session["step"] == STEP_IMAGE_AWAITING_PROMPT:
+            # Text-only prompt (no reference images)
+            session["prompt"] = text
+            bot.reply_to(message, "⏳ Generating your image... Please wait.")
+            _generate_and_send_image(message, session)
+
+        elif session["step"] == STEP_IMAGE_AWAITING_PROMPT_FOR_PHOTOS:
+            # Text prompt for already-uploaded reference images
+            session["prompt"] = text
+            count = len(session["reference_images"])
+            bot.reply_to(
+                message,
+                f"⏳ Generating image with {count} reference{'s' if count > 1 else ''}... Please wait."
+            )
+            _generate_and_send_image(message, session)
+
+    def _generate_and_send_image(message, session):
+        """Generate an image and send it back to the user."""
+        try:
+            prompt = session.get("prompt", "")
+            ref_images = session.get("reference_images", [])
+
+            if ref_images:
+                result = generate_image_with_references(prompt, ref_images)
+            else:
+                result = generate_image_from_text(prompt)
+
+            if result:
+                _send_image_result(message, result)
+            else:
+                bot.reply_to(message, "❌ Failed to generate image. Please try again with a different prompt.")
+        except Exception as e:
+            bot.reply_to(message, f"❌ Error generating image: {str(e)}")
+        finally:
+            clear_session(message.chat.id)
+
+    def _send_image_result(message, result):
+        """Send the generated image to the user."""
+        base_url = get_proposal_base_url()
+        image_url = f"{base_url}{result.get('image_url', '')}"
+        image_path = result.get("image_path", "")
+        prompt = result.get("prompt", "")
+
+        caption = (
+            "\ud83c\udfa8 *Image generated\\!*\n\n"
+            f"\ud83d\udcdd Prompt: _{escape_md2(prompt)}_\n"
+            f"\ud83d\udd17 [View full image]({escape_md2(image_url)})"
+        )
+
+        if os.path.exists(image_path):
+            try:
+                with open(image_path, "rb") as photo:
+                    bot.send_photo(message.chat.id, photo, caption=caption, parse_mode="MarkdownV2")
+                return
+            except Exception as e:
+                print(f"[Bot] Error sending generated image: {e}")
+
+        bot.reply_to(message, caption, parse_mode="MarkdownV2")
 
     # ─────────────────────────────────────────
     # Proposal generation & delivery
