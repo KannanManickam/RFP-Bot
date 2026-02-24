@@ -44,6 +44,7 @@ COPY package.json package-lock.json ./
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
+    APScheduler \
     beautifulsoup4 \
     flask \
     gunicorn \
@@ -55,7 +56,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     requests
 
 # Copy application code
-COPY main.py generator.py document_parser.py image_generator.py puppeteer_config.json ./
+COPY main.py generator.py document_parser.py image_generator.py daily_jobs.py puppeteer_config.json ./
 COPY templates/ templates/
 COPY static/ static/
 COPY public/ static/

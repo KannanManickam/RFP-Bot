@@ -19,6 +19,7 @@ from image_generator import (
     validate_image_size,
     MAX_REFERENCE_IMAGES,
 )
+import daily_jobs
 
 app = Flask(__name__)
 
@@ -282,6 +283,8 @@ if bot:
             "📝 `/pitch` — Start creating a new proposal \\(guided\\)\n"
             "🎨 `/image` — Generate an AI image from text \\& photos\n"
             "📋 `/proposals` — View all generated proposals\n"
+            "🧠 `/funfact` — Get a daily fun fact with illustration\n"
+            "🔥 `/aitechpulse` — Get trending AI tech news \\& build ideas\n"
             "❌ `/cancel` — Cancel current session\n\n"
             "_Quick format for proposals:_\n"
             "`/pitch https://example\\.com Project Name`",
@@ -316,6 +319,26 @@ if bot:
 
         bot.reply_to(message, "\n\n".join(lines), parse_mode="MarkdownV2",
                      disable_web_page_preview=True)
+
+    @bot.message_handler(commands=["funfact"])
+    def handle_funfact(message):
+        """Manually trigger the Fun Fact job."""
+        bot.reply_to(message, "🧠 Generating your fun fact... Please wait.")
+        threading.Thread(
+            target=daily_jobs.trigger_fun_fact,
+            args=(message.chat.id,),
+            daemon=True,
+        ).start()
+
+    @bot.message_handler(commands=["aitechpulse"])
+    def handle_aitechpulse(message):
+        """Manually trigger the AI Tech Pulse job."""
+        bot.reply_to(message, "🔥 Fetching today's AI tech pulse... Please wait.")
+        threading.Thread(
+            target=daily_jobs.trigger_ai_tech_pulse,
+            args=(message.chat.id,),
+            daemon=True,
+        ).start()
 
     @bot.message_handler(commands=["pitch"])
     def handle_pitch(message):
@@ -873,6 +896,9 @@ if bot:
     bot_thread = threading.Thread(target=run_bot, daemon=True)
     bot_thread.start()
     print("[Bot] Telegram bot thread started.")
+
+    # Start daily scheduled jobs
+    daily_jobs.init(bot)
 else:
     print("[Bot] No TELEGRAM_BOT_TOKEN set. Bot disabled. Set it in Secrets.")
 
