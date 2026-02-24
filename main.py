@@ -284,7 +284,7 @@ if bot:
             "🎨 `/image` — Generate an AI image from text \\& photos\n"
             "📋 `/proposals` — View all generated proposals\n"
             "🧠 `/funfact` — Get a daily fun fact with illustration\n"
-            "🔥 `/aitechpulse` — Get trending AI tech news \\& build ideas\n"
+            "🔥 `/aipulse` — Get trending AI tech news \\& build ideas\n"
             "❌ `/cancel` — Cancel current session\n\n"
             "_Quick format for proposals:_\n"
             "`/pitch https://example\\.com Project Name`",
@@ -330,8 +330,8 @@ if bot:
             daemon=True,
         ).start()
 
-    @bot.message_handler(commands=["aitechpulse"])
-    def handle_aitechpulse(message):
+    @bot.message_handler(commands=["aipulse"])
+    def handle_aipulse(message):
         """Manually trigger the AI Tech Pulse job."""
         bot.reply_to(message, "🔥 Fetching today's AI tech pulse... Please wait.")
         threading.Thread(

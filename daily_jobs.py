@@ -49,7 +49,7 @@ FUN_FACT_SYSTEM_PROMPT = (
     "RULES:\n"
     "- The fact must be TRUE and verifiable.\n"
     "- Write in a conversational, engaging tone.\n"
-    "- 5 to 10 lines maximum.\n"
+    "- 3 to 6 lines maximum.\n"
     "- Start with the surprising hook, then explain the backstory.\n"
     "- End with a fun closing remark or emoji.\n"
     "- Do NOT use a title or heading — just the text.\n"
@@ -249,7 +249,7 @@ def init(bot_instance):
 
     if not CHAT_ID:
         _log("WARNING: TELEGRAM_CHAT_ID not set. Scheduled jobs won't send messages.")
-        _log("Commands /funfact and /aitechpulse will still work when triggered from chat.")
+        _log("Commands /funfact and /aipulse will still work when triggered from chat.")
 
     scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
 
