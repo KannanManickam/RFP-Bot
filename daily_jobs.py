@@ -28,6 +28,12 @@ client_ai = OpenAI(
 
 CONTENT_MODEL = "gpt-5-nano"
 CHAT_ID = None  # Set at startup via init()
+
+
+def _log(msg):
+    """Print a log message with IST timestamp."""
+    ts = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
+    print(f"[{ts}] [DailyJobs] {msg}", flush=True)
 _bot = None     # Telegram bot instance, set at startup via init()
 
 
@@ -74,15 +80,15 @@ def _generate_fun_fact_text():
 def run_fun_fact_job():
     """Execute the Fun Fact job: generate text + image, send to Telegram."""
     if not _bot or not CHAT_ID:
-        print("[DailyJobs] Fun Fact skipped — bot or CHAT_ID not configured.")
+        _log("Fun Fact skipped — bot or CHAT_ID not configured.")
         return
 
-    print("[DailyJobs] Running Fun Fact job...", flush=True)
+    _log("Running Fun Fact job...")
 
     try:
         # 1. Generate the fun fact text
         fact_text = _generate_fun_fact_text()
-        print(f"[DailyJobs] Fun fact generated ({len(fact_text)} chars)", flush=True)
+        _log(f"Fun fact generated ({len(fact_text)} chars)")
 
         # 2. Send the text message first
         header = "🧠 *Daily Fun Fact*\n\n"
@@ -95,12 +101,12 @@ def run_fun_fact_job():
         if result and result.get("image_path"):
             _send_image(CHAT_ID, result["image_path"], caption="🎨 _Illustration of today's fun fact_")
         else:
-            print("[DailyJobs] Image generation failed, sending text only.", flush=True)
+            _log("Image generation failed, sending text only.")
 
-        print("[DailyJobs] Fun Fact job completed.", flush=True)
+        _log("Fun Fact job completed.")
 
     except Exception as e:
-        print(f"[DailyJobs] Fun Fact job error: {e}", flush=True)
+        _log(f"Fun Fact job error: {e}")
         traceback.print_exc()
 
 
@@ -160,15 +166,15 @@ def _generate_ai_tech_pulse():
 def run_ai_tech_pulse_job():
     """Execute the AI Tech Pulse job: generate and send trending AI news."""
     if not _bot or not CHAT_ID:
-        print("[DailyJobs] AI Tech Pulse skipped — bot or CHAT_ID not configured.")
+        _log("AI Tech Pulse skipped — bot or CHAT_ID not configured.")
         return
 
-    print("[DailyJobs] Running AI Tech Pulse job...", flush=True)
+    _log("Running AI Tech Pulse job...")
 
     try:
         today = datetime.now(IST).strftime("%d %b %Y")
         content = _generate_ai_tech_pulse()
-        print(f"[DailyJobs] AI Tech Pulse generated ({len(content)} chars)", flush=True)
+        _log(f"AI Tech Pulse generated ({len(content)} chars)")
 
         header = f"🔥 *AI Tech Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
         full_message = header + content
@@ -180,10 +186,10 @@ def run_ai_tech_pulse_job():
         else:
             _bot.send_message(CHAT_ID, full_message, parse_mode="Markdown")
 
-        print("[DailyJobs] AI Tech Pulse job completed.", flush=True)
+        _log("AI Tech Pulse job completed.")
 
     except Exception as e:
-        print(f"[DailyJobs] AI Tech Pulse job error: {e}", flush=True)
+        _log(f"AI Tech Pulse job error: {e}")
         traceback.print_exc()
 
 
@@ -207,7 +213,7 @@ def _send_image(chat_id, image_path, caption=""):
         buf.name = "funfact.jpg"
         _bot.send_photo(chat_id, buf, caption=caption, parse_mode="Markdown")
     except Exception as e:
-        print(f"[DailyJobs] Error sending image: {e}", flush=True)
+        _log(f"Error sending image: {e}")
 
 
 def _send_long_message(chat_id, text, max_len=4096):
@@ -242,8 +248,8 @@ def init(bot_instance):
     CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
     if not CHAT_ID:
-        print("[DailyJobs] WARNING: TELEGRAM_CHAT_ID not set. Scheduled jobs won't send messages.")
-        print("[DailyJobs] Commands /funfact and /aitechpulse will still work when triggered from chat.")
+        _log("WARNING: TELEGRAM_CHAT_ID not set. Scheduled jobs won't send messages.")
+        _log("Commands /funfact and /aitechpulse will still work when triggered from chat.")
 
     scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
 
@@ -266,9 +272,9 @@ def init(bot_instance):
     )
 
     scheduler.start()
-    print("[DailyJobs] Scheduler started with 2 jobs:", flush=True)
-    print("[DailyJobs]   • Fun Fact       → 11:00 AM IST daily", flush=True)
-    print("[DailyJobs]   • AI Tech Pulse  → 11:30 AM IST daily", flush=True)
+    _log("Scheduler started with 2 jobs:")
+    _log("  • Fun Fact       → 11:00 AM IST daily")
+    _log("  • AI Tech Pulse  → 11:30 AM IST daily")
 
 
 def trigger_fun_fact(chat_id):
