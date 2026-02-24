@@ -49,7 +49,7 @@ FUN_FACT_SYSTEM_PROMPT = (
     "RULES:\n"
     "- The fact must be TRUE and verifiable.\n"
     "- Write in a conversational, engaging tone.\n"
-    "- 3 to 6 lines maximum.\n"
+    "- 3 to 5 lines maximum.\n"
     "- Start with the surprising hook, then explain the backstory.\n"
     "- End with a fun closing remark or emoji.\n"
     "- Do NOT use a title or heading — just the text.\n"
@@ -289,7 +289,7 @@ def trigger_fun_fact(chat_id):
 
 
 def trigger_ai_tech_pulse(chat_id):
-    """Manually trigger AI Tech Pulse for a specific chat (used by /aitechpulse command)."""
+    """Manually trigger AI Tech Pulse for a specific chat (used by /aipulse command)."""
     global CHAT_ID
     original_chat_id = CHAT_ID
     CHAT_ID = chat_id

@@ -21,11 +21,13 @@
 >
 > 🎨 **Create & edit AI images** from text prompts or reference photos — all without leaving Telegram.
 >
+> 📡 **Daily AI-powered content** — fun facts with illustrations & trending AI tech news, delivered automatically.
+>
 > 🔗 **[www.sparktoship.com](https://www.sparktoship.com/)**
 
 <br/>
 
-[✨ Features](#-features) · [📄 Proposals](#-ai-generated-proposals) · [🎨 Image Generation](#-ai-image-generation) · [🚀 Quick Start](#-quick-start) · [🤖 Bot Commands](#-bot-commands) · [🐳 Deployment](#-deployment)
+[✨ Features](#-features) · [📄 Proposals](#-ai-generated-proposals) · [🎨 Image Generation](#-ai-image-generation) · [📡 Daily Jobs](#-daily-scheduled-jobs) · [🚀 Quick Start](#-quick-start) · [🤖 Bot Commands](#-bot-commands) · [🐳 Deployment](#-deployment)
 
 </div>
 
@@ -39,6 +41,7 @@ The **SparkToShip Bot** is a multi-capability AI assistant built for technical a
 |---|---|
 | 📄 **Proposal Generation** | Turns a client URL + brief into a fully-structured HTML proposal with pricing, roadmap, team plan, tech stack & architecture diagram — in minutes |
 | 🎨 **AI Image Generation** | Generates stunning images from text prompts, or edits/transforms your photos using reference images — powered by OpenAI's image model |
+| 📡 **Daily Scheduled Jobs** | Automated daily content — a fun fact with AI-generated illustration (11 AM IST) and trending AI tech news with build ideas (11:30 AM IST) |
 
 No complex tools, no dashboards to fight with — just a natural conversation in Telegram.
 
@@ -75,6 +78,12 @@ No complex tools, no dashboards to fight with — just a natural conversation in
 - AI-powered **prompt refinement** to enhance image quality automatically
 - Images are compressed and optimized before sending via Telegram
 
+### 📡 Daily Scheduled Jobs
+- **🧠 Fun Fact** (11:00 AM IST) — AI-curated obscure trivia from science, history, language, and more, accompanied by an AI-generated illustration
+- **🔥 AI Tech Pulse** (11:30 AM IST) — Trending AI/ML news, actionable build ideas, LinkedIn post suggestions, and a quick stat — curated for builders and developers
+- Both jobs run automatically via **APScheduler** and can also be triggered on-demand via bot commands
+- Smart message splitting for long content (Telegram's 4096-char limit)
+
 ### 🗄️ Web Dashboard
 - Sleek, animated proposal dashboard at the root URL
 - Lists all generated proposals with client name, project title, and creation timestamp
@@ -108,6 +117,7 @@ No complex tools, no dashboards to fight with — just a natural conversation in
 | **Bot Interface** | pyTelegramBotAPI |
 | **AI / LLM** | OpenAI API (GPT models) |
 | **Image Generation** | OpenAI `gpt-image-1.5` |
+| **Scheduler** | APScheduler (BackgroundScheduler) |
 | **Diagramming** | Mermaid.js + Puppeteer (`mmdc` CLI) |
 | **Frontend** | HTML5, TailwindCSS, Font Awesome |
 | **PDF Parsing** | pdfplumber |
@@ -163,6 +173,7 @@ AI_INTEGRATIONS_OPENAI_API_KEY=your_openai_api_key_here
 # ── Optional ──────────────────────────────────────────────
 AI_INTEGRATIONS_OPENAI_BASE_URL=https://api.openai.com/v1   # custom base URL if needed
 APP_DOMAIN=your-domain.com                                   # for production URL links in bot messages
+TELEGRAM_CHAT_ID=your_chat_id_here                           # required for daily scheduled jobs
 ```
 
 ### 5. Run the Application
@@ -186,6 +197,8 @@ Once your bot is running, these commands are available in Telegram:
 | `/pitch <url> [Project Name]` | **Quick mode** — jump straight to AI generation with a client URL |
 | `/proposals` | List the 10 most recently generated proposals with links |
 | `/image` | Open an AI image generation session |
+| `/funfact` | Trigger a **Fun Fact** on-demand — interesting trivia + AI illustration |
+| `/aipulse` | Trigger **AI Tech Pulse** on-demand — trending AI news + build ideas |
 | `/cancel` | Cancel the current active session (pitch or image) |
 
 ### 📝 Guided Proposal Flow (`/pitch`)
@@ -222,6 +235,7 @@ Deal-Closer-Bot/
 ├── main.py                  # 🧠 App entry: Flask server + Telegram bot + session logic
 ├── generator.py             # 📝 Proposal engine: AI content, web scraping, Mermaid diagrams
 ├── image_generator.py       # 🎨 Image generation: text-to-image + reference-based editing
+├── daily_jobs.py            # 📡 Daily scheduled jobs: Fun Fact + AI Tech Pulse
 ├── document_parser.py       # 📂 File parsing: PDF/TXT/MD upload + URL fetching
 │
 ├── templates/
@@ -343,6 +357,7 @@ server {
 | `AI_INTEGRATIONS_OPENAI_API_KEY` | ✅ Yes | OpenAI API key for GPT and image generation |
 | `AI_INTEGRATIONS_OPENAI_BASE_URL` | ❌ Optional | Custom OpenAI-compatible API base URL |
 | `APP_DOMAIN` | ❌ Recommended | Your server's domain for generating proposal links in bot messages |
+| `TELEGRAM_CHAT_ID` | ❌ Optional | Target chat ID for daily scheduled jobs (Fun Fact & AI Tech Pulse) |
 
 ---
 
@@ -367,6 +382,7 @@ pdfplumber >= 0.11.0
 Pillow >= 10.0.0
 python-dotenv >= 1.0.0
 pytelegrambotapi >= 4.31.0
+APScheduler >= 3.10.0
 requests >= 2.32.5
 ```
 
