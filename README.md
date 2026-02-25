@@ -41,7 +41,7 @@ The **SparkToShip Bot** is a multi-capability AI assistant built for technical a
 |---|---|
 | 📄 **Proposal Generation** | Turns a client URL + brief into a fully-structured HTML proposal with pricing, roadmap, team plan, tech stack & architecture diagram — in minutes |
 | 🎨 **AI Image Generation** | Generates stunning images from text prompts, or edits/transforms your photos using reference images — powered by OpenAI's image model |
-| 📡 **Daily Scheduled Jobs** | Automated daily content — a fun fact with AI-generated illustration (11 AM IST) and trending AI tech news with build ideas (11:30 AM IST) |
+| 📡 **Daily Scheduled Jobs** | Automated recurring content — a fun fact with AI-generated illustration + trending AI tech news with build ideas, delivered every few hours on a configurable schedule (default: every 4h from 10 AM – 10 PM IST) |
 
 No complex tools, no dashboards to fight with — just a natural conversation in Telegram.
 
@@ -79,10 +79,19 @@ No complex tools, no dashboards to fight with — just a natural conversation in
 - Images are compressed and optimized before sending via Telegram
 
 ### 📡 Daily Scheduled Jobs
-- **🧠 Fun Fact** (11:00 AM IST) — AI-curated obscure trivia from science, history, language, and more, accompanied by an AI-generated illustration
-- **🔥 AI Tech Pulse** (11:30 AM IST) — Trending AI/ML news, actionable build ideas, LinkedIn post suggestions, and a quick stat — curated for builders and developers
+- **Configurable schedule** via env vars — set start hour, end hour, and interval (default: every **4 hours** from **10:00 AM to 10:00 PM IST**)
+- **🧠 Fun Fact** — fires at `:00` of each scheduled hour. AI-curated obscure trivia from science, history, language, and more, accompanied by an AI-generated illustration
+- **🔥 AI Tech Pulse** — chains immediately after Fun Fact. Trending AI/ML news, actionable build ideas, LinkedIn post suggestions, and a quick stat — curated for builders and developers
 - Both jobs run automatically via **APScheduler** and can also be triggered on-demand via bot commands
 - Smart message splitting for long content (Telegram's 4096-char limit)
+
+  | Env Variable | Default | Description |
+  |---|---|---|
+  | `SCHEDULE_START_HOUR` | `10` | First run hour (IST, 24h format) |
+  | `SCHEDULE_END_HOUR` | `22` | Last run hour (IST, 24h format) |
+  | `SCHEDULE_INTERVAL_HOURS` | `4` | Gap in hours between runs |
+
+  > With the defaults, jobs fire at **10:00, 14:00, 18:00, and 22:00 IST**.
 
 ### 🗄️ Web Dashboard
 - Sleek, animated proposal dashboard at the root URL
@@ -357,7 +366,10 @@ server {
 | `AI_INTEGRATIONS_OPENAI_API_KEY` | ✅ Yes | OpenAI API key for GPT and image generation |
 | `AI_INTEGRATIONS_OPENAI_BASE_URL` | ❌ Optional | Custom OpenAI-compatible API base URL |
 | `APP_DOMAIN` | ❌ Recommended | Your server's domain for generating proposal links in bot messages |
-| `TELEGRAM_CHAT_ID` | ❌ Optional | Target chat ID for daily scheduled jobs (Fun Fact & AI Tech Pulse) |
+| `TELEGRAM_CHAT_ID` | ❌ Optional | Target chat/group ID for scheduled jobs (Fun Fact & AI Tech Pulse) |
+| `SCHEDULE_START_HOUR` | ❌ Optional | First scheduled run hour in IST 24h format (default: `10`) |
+| `SCHEDULE_END_HOUR` | ❌ Optional | Last scheduled run hour in IST 24h format (default: `22`) |
+| `SCHEDULE_INTERVAL_HOURS` | ❌ Optional | Hours between scheduled runs (default: `4`) |
 
 ---
 
