@@ -1,7 +1,12 @@
 """
 Daily scheduled jobs for Telegram bot.
-Job 1: Fun Fact (11:00 AM IST) — interesting trivia + AI-generated illustration
-Job 2: AI Tech Pulse (11:30 AM IST) — trending AI news + build ideas + LinkedIn suggestions
+Job 1: Fun Fact (:00 of each scheduled hour) — interesting trivia + AI-generated illustration
+Job 2: AI Tech Pulse (:30 of each scheduled hour) — trending AI news + build ideas + LinkedIn suggestions
+
+Schedule is configurable via env vars:
+  SCHEDULE_START_HOUR  — first run hour  (default 10)
+  SCHEDULE_END_HOUR    — last run hour   (default 22)
+  SCHEDULE_INTERVAL_HOURS — gap between runs (default 4)
 """
 
 import os
@@ -77,8 +82,10 @@ def _generate_fun_fact_text():
     return response.choices[0].message.content.strip()
 
 
-def run_fun_fact_job():
-    """Execute the Fun Fact job: generate text + image, send to Telegram."""
+def run_fun_fact_job(chain=True):
+    """Execute the Fun Fact job: generate text + image, send to Telegram.
+    If chain=True (default for scheduled runs), AI Tech Pulse runs immediately after.
+    """
     if not _bot or not CHAT_ID:
         _log("Fun Fact skipped — bot or CHAT_ID not configured.")
         return
@@ -108,6 +115,11 @@ def run_fun_fact_job():
     except Exception as e:
         _log(f"Fun Fact job error: {e}")
         traceback.print_exc()
+
+    # Chain: run AI Tech Pulse immediately after Fun Fact
+    if chain:
+        _log("Chaining → AI Tech Pulse...")
+        run_ai_tech_pulse_job()
 
 
 # ─────────────────────────────────────────────
@@ -237,6 +249,15 @@ def _send_long_message(chat_id, text, max_len=4096):
 scheduler = None
 
 
+def _get_schedule_hours():
+    """Compute the list of scheduled hours from env configuration."""
+    start = int(os.environ.get("SCHEDULE_START_HOUR", "10"))
+    end = int(os.environ.get("SCHEDULE_END_HOUR", "22"))
+    interval = int(os.environ.get("SCHEDULE_INTERVAL_HOURS", "4"))
+    hours = list(range(start, end + 1, interval))
+    return hours, start, end, interval
+
+
 def init(bot_instance):
     """
     Initialize daily jobs with the Telegram bot instance.
@@ -251,30 +272,26 @@ def init(bot_instance):
         _log("WARNING: TELEGRAM_CHAT_ID not set. Scheduled jobs won't send messages.")
         _log("Commands /funfact and /aipulse will still work when triggered from chat.")
 
+    hours, start, end, interval = _get_schedule_hours()
+    hour_csv = ",".join(str(h) for h in hours)
+
     scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
 
-    # Job 1: Fun Fact at 11:00 AM IST daily
+    # Single cron: Fun Fact fires at :00, then chains AI Tech Pulse immediately after
     scheduler.add_job(
         run_fun_fact_job,
-        CronTrigger(hour=11, minute=0, timezone="Asia/Kolkata"),
-        id="daily_fun_fact",
-        name="Daily Fun Fact",
-        replace_existing=True,
-    )
-
-    # Job 2: AI Tech Pulse at 11:30 AM IST daily
-    scheduler.add_job(
-        run_ai_tech_pulse_job,
-        CronTrigger(hour=11, minute=30, timezone="Asia/Kolkata"),
-        id="daily_ai_tech_pulse",
-        name="Daily AI Tech Pulse",
+        CronTrigger(hour=hour_csv, minute=0, timezone="Asia/Kolkata"),
+        id="daily_scheduled_jobs",
+        name="Daily Scheduled Jobs (Fun Fact → AI Tech Pulse)",
         replace_existing=True,
     )
 
     scheduler.start()
-    _log("Scheduler started with 2 jobs:")
-    _log("  • Fun Fact       → 11:00 AM IST daily")
-    _log("  • AI Tech Pulse  → 11:30 AM IST daily")
+    pretty_hours = ", ".join(f"{h}:00" for h in hours)
+    _log(f"Scheduler started — every {interval}h from {start}:00 to {end}:00 IST")
+    _log(f"  Scheduled hours : {pretty_hours}")
+    _log(f"  • Fun Fact      → runs first")
+    _log(f"  • AI Tech Pulse → runs immediately after Fun Fact")
 
 
 def trigger_fun_fact(chat_id):
@@ -283,7 +300,7 @@ def trigger_fun_fact(chat_id):
     original_chat_id = CHAT_ID
     CHAT_ID = chat_id
     try:
-        run_fun_fact_job()
+        run_fun_fact_job(chain=False)
     finally:
         CHAT_ID = original_chat_id
 
