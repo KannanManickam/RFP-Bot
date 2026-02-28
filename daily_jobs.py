@@ -1,7 +1,9 @@
 """
 Daily scheduled jobs for Telegram bot.
-Job 1: Fun Fact (:00 of each scheduled hour) — interesting trivia + AI-generated illustration
-Job 2: AI Tech Pulse (:30 of each scheduled hour) — trending AI news + build ideas + LinkedIn suggestions
+Job 1: Fun Fact — interesting trivia + AI-generated illustration
+Job 2: Tech Pulse — two prompts based on time of day:
+        • Morning (before 2 PM IST): AI Tech Pulse — trending AI news + build ideas
+        • Evening (2 PM IST onwards): Drone & IoT Pulse — drones, IoT, robotics trends
 
 Schedule is configurable via env vars:
   SCHEDULE_START_HOUR  — first run hour  (default 10)
@@ -141,67 +143,114 @@ AI_TECH_PULSE_SYSTEM_PROMPT = (
     "[2-3 trends, each with an emoji number (1️⃣ 2️⃣ 3️⃣), a bold title, "
     "and 2-3 lines explaining what's happening and why it matters]\n\n"
     "🛠 Build Ideas\n\n"
-    "[3-4 actionable project ideas inspired by the trends above. "
+    "[2-3 actionable project ideas inspired by the trends above. "
     "Each starts with 💡 and is 1-2 lines. These should be things a solo "
     "developer or small team could actually build.]\n\n"
-    "📝 LinkedIn Post Ideas\n\n"
-    "[Pick 1-2 of the build ideas above and draft a compelling LinkedIn "
-    "post angle/hook for each. Start with 🔹. Include the format suggestion "
-    "(thread, hot take, tutorial, etc.)]\n\n"
     "📊 Quick Stat\n\n"
     "[One notable AI stat or metric from this week — can be approximate.]\n\n"
     "Keep the entire response concise and punchy. Use emojis tastefully. "
     "Do NOT use markdown headers (#). Use plain text with emoji separators."
 )
 
+EVENING_TECH_PULSE_SYSTEM_PROMPT = (
+    "You are a tech trends curator specialising in Drones, IoT, and Robotics "
+    "for a builder/developer audience. Your job is to surface what's buzzing "
+    "in these domains RIGHT NOW.\n\n"
+    "RULES:\n"
+    "- Focus ONLY on: drones, UAVs, IoT platforms & protocols, robotics, "
+    "embedded AI, edge computing, sensor tech, ROS/ROS2, autonomous systems, "
+    "hardware launches, and open-source robotics/IoT projects.\n"
+    "- Do NOT cover general AI/ML, company earnings, politics, or corporate drama.\n"
+    "- Be specific with product names, repos, frameworks, and hardware when possible.\n\n"
+    "FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:\n\n"
+    "🚁 Trending in Drones, IoT & Robotics\n\n"
+    "[2-3 trends, each with an emoji number (1️⃣ 2️⃣ 3️⃣), a bold title, "
+    "and 2-3 lines explaining what's happening and why it matters]\n\n"
+    "🛠 Build Ideas\n\n"
+    "[2-3 actionable project ideas inspired by the trends above. "
+    "Each starts with 💡 and is 1-2 lines. Focus on drone builds, IoT "
+    "prototypes, or robotics projects a solo developer or small team could tackle.]\n\n"
+    "📊 Quick Stat\n\n"
+    "[One notable stat or metric from the drones/IoT/robotics world — "
+    "can be approximate.]\n\n"
+    "Keep the entire response concise and punchy. Use emojis tastefully. "
+    "Do NOT use markdown headers (#). Use plain text with emoji separators."
+)
 
-def _generate_ai_tech_pulse():
-    """Generate AI tech trending content using AI."""
+
+def _is_morning():
+    """Return True if current IST hour is before 14:00 (2 PM)."""
+    return datetime.now(IST).hour < 14
+
+
+def _generate_ai_tech_pulse(morning=True):
+    """Generate tech trending content using AI.
+    morning=True  → AI Tech Pulse (general AI/ML)
+    morning=False → Drone & IoT Pulse (drones, IoT, robotics)
+    """
     today = datetime.now(IST).strftime("%A, %d %B %Y")
+
+    if morning:
+        system_prompt = AI_TECH_PULSE_SYSTEM_PROMPT
+        user_msg = (
+            f"Today is {today}. What are the most viral and trending "
+            "AI tech topics right now? Focus on what developers and "
+            "builders are excited about."
+        )
+    else:
+        system_prompt = EVENING_TECH_PULSE_SYSTEM_PROMPT
+        user_msg = (
+            f"Today is {today}. What are the most exciting developments "
+            "in drones, IoT, and robotics right now? Cover new hardware, "
+            "open-source projects, frameworks, and anything builders are "
+            "buzzing about in these spaces."
+        )
+
     response = client_ai.chat.completions.create(
         model=CONTENT_MODEL,
         messages=[
-            {"role": "system", "content": AI_TECH_PULSE_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": (
-                    f"Today is {today}. What are the most viral and trending "
-                    "AI tech topics right now? Focus on what developers and "
-                    "builders are excited about."
-                ),
-            },
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_msg},
         ],
     )
     return response.choices[0].message.content.strip()
 
 
 def run_ai_tech_pulse_job():
-    """Execute the AI Tech Pulse job: generate and send trending AI news."""
+    """Execute the Tech Pulse job.
+    Automatically selects morning (AI Tech) or evening (Drone & IoT) prompt
+    based on the current IST hour.
+    """
     if not _bot or not CHAT_ID:
-        _log("AI Tech Pulse skipped — bot or CHAT_ID not configured.")
+        _log("Tech Pulse skipped — bot or CHAT_ID not configured.")
         return
 
-    _log("Running AI Tech Pulse job...")
+    morning = _is_morning()
+    variant = "AI Tech Pulse" if morning else "Drone & IoT Pulse"
+    _log(f"Running {variant} job...")
 
     try:
         today = datetime.now(IST).strftime("%d %b %Y")
-        content = _generate_ai_tech_pulse()
-        _log(f"AI Tech Pulse generated ({len(content)} chars)")
+        content = _generate_ai_tech_pulse(morning=morning)
+        _log(f"{variant} generated ({len(content)} chars)")
 
-        header = f"🔥 *AI Tech Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
+        if morning:
+            header = f"🔥 *AI Tech Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
+        else:
+            header = f"🚁 *Drone & IoT Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
+
         full_message = header + content
 
         # Telegram has a 4096 char limit per message
         if len(full_message) > 4096:
-            # Split into chunks at line breaks
             _send_long_message(CHAT_ID, full_message)
         else:
             _bot.send_message(CHAT_ID, full_message, parse_mode="Markdown")
 
-        _log("AI Tech Pulse job completed.")
+        _log(f"{variant} job completed.")
 
     except Exception as e:
-        _log(f"AI Tech Pulse job error: {e}")
+        _log(f"{variant} job error: {e}")
         traceback.print_exc()
 
 
