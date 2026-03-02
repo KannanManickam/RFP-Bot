@@ -60,6 +60,7 @@ COPY main.py generator.py document_parser.py image_generator.py video_generator.
 COPY templates/ templates/
 COPY static/ static/
 COPY public/ static/
+COPY public/ public/
 COPY remotion/ remotion/
 
 # Ensure Remotion's headless Chrome is available
