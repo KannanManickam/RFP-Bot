@@ -78,6 +78,7 @@ def generate_video(composition_id, props=None, duration_seconds=12):
         REMOTION_ENTRY,
         composition_id,
         output_path,
+        "--concurrency=1",
     ]
 
     # Pass input props as JSON
