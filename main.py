@@ -20,6 +20,7 @@ from image_generator import (
     MAX_REFERENCE_IMAGES,
 )
 import daily_jobs
+from video_generator import generate_on_demand_video, is_enabled as video_enabled
 
 app = Flask(__name__)
 
@@ -44,6 +45,9 @@ STEP_AWAITING_DOCUMENT = "awaiting_document"
 # Image generation session steps
 STEP_IMAGE_AWAITING_PROMPT = "image_awaiting_prompt"
 STEP_IMAGE_AWAITING_PROMPT_FOR_PHOTOS = "image_awaiting_prompt_for_photos"
+
+# Video generation session steps
+STEP_VIDEO_AWAITING_PROMPT = "video_awaiting_prompt"
 
 user_sessions = {}
 sessions_lock = threading.Lock()
@@ -282,6 +286,7 @@ if bot:
             "Available commands:\n\n"
             "📝 `/pitch` — Start creating a new proposal \\(guided\\)\n"
             "🎨 `/image` — Generate an AI image from text \\& photos\n"
+            "🎬 `/video` — Generate an animated video from a topic\n"
             "📋 `/proposals` — View all generated proposals\n"
             "🧠 `/funfact` — Get a daily fun fact with illustration\n"
             "🔥 `/aipulse` — Get trending AI tech news \\& build ideas\n"
@@ -374,6 +379,54 @@ if bot:
             "Also share their *website URL* if they have one\\.\n\n"
             "_Example:_ `Acme Corp https://acme\\.com`\n"
             "_No website:_ `Acme Corp skip`",
+            parse_mode="MarkdownV2",
+        )
+
+    # ─────────────────────────────────────────
+    # /video command handler
+    # ─────────────────────────────────────────
+
+    @bot.message_handler(commands=["video"])
+    def handle_video_command(message):
+        """Start a video generation session."""
+        if not video_enabled():
+            bot.reply_to(
+                message,
+                "🎬 Video generation is currently disabled.\n"
+                "Set `ENABLE_VIDEO_GENERATION=true` in .env to enable it.",
+                parse_mode="Markdown",
+            )
+            return
+
+        # Check for inline prompt: /video <topic>
+        parts = message.text.split(maxsplit=1)
+        if len(parts) > 1:
+            prompt = parts[1].strip()
+            bot.reply_to(message, f"🎬 Generating video for: _{prompt}_\n⏳ This may take a minute...", parse_mode="Markdown")
+            threading.Thread(
+                target=_generate_and_send_video,
+                args=(message, prompt),
+                daemon=True,
+            ).start()
+            return
+
+        # Guided flow
+        with sessions_lock:
+            user_sessions[message.chat.id] = {
+                "step": STEP_VIDEO_AWAITING_PROMPT,
+                "type": "video",
+                "last_active": time.time(),
+            }
+
+        bot.reply_to(
+            message,
+            "🎬 *Video Generator*\n\n"
+            "Send me a topic or description for your video\\.\n\n"
+            "_Examples:_\n"
+            "• `A fun fact about octopuses`\n"
+            "• `Explain how blockchain works`\n"
+            "• `An inspiring quote about perseverance`\n\n"
+            "Type `/cancel` to exit\\.",
             parse_mode="MarkdownV2",
         )
 
@@ -553,8 +606,13 @@ if bot:
         if text.lower() in ("/cancel", "cancel"):
             clear_session(message.chat.id)
             session_type = session.get("type", "pitch")
-            label = "Image" if session_type == "image" else "Pitch"
+            label = {"image": "Image", "video": "Video"}.get(session_type, "Pitch")
             bot.reply_to(message, f"❌ {label} session cancelled.")
+            return
+
+        # ── Video generation flow ──
+        if session.get("type") == "video":
+            _handle_video_text(message, session, text)
             return
 
         # ── Image generation flow ──
@@ -742,6 +800,85 @@ if bot:
                 "⏭ Type `skip` to proceed without it",
                 parse_mode="MarkdownV2",
             )
+
+    # ─────────────────────────────────────────
+    # Video generation text handler & delivery
+    # ─────────────────────────────────────────
+
+    def _handle_video_text(message, session, text):
+        """Handle text input during a video generation session."""
+        if session["step"] == STEP_VIDEO_AWAITING_PROMPT:
+            clear_session(message.chat.id)
+            bot.reply_to(message, f"🎬 Generating video for: _{text}_\n⏳ This may take a minute...", parse_mode="Markdown")
+            threading.Thread(
+                target=_generate_and_send_video,
+                args=(message, text),
+                daemon=True,
+            ).start()
+
+    def _generate_and_send_video(message, topic):
+        """Generate a video from a topic and send it to the user."""
+        from openai import OpenAI
+
+        try:
+            # Use AI to generate structured content for the video
+            client_ai = OpenAI(
+                api_key=os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY"),
+                base_url=os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL"),
+            )
+
+            response = client_ai.chat.completions.create(
+                model="gpt-5-nano",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You generate content for short animated videos. "
+                            "Given a topic, generate:\n"
+                            "1. A short punchy TITLE (3-6 words, no emoji)\n"
+                            "2. The CONTENT (3-5 engaging sentences about the topic)\n"
+                            "3. A single relevant EMOJI\n"
+                            "4. A STYLE: 'facts', 'explainer', or 'quote'\n\n"
+                            "Respond ONLY as JSON: "
+                            '{"title":"...","content":"...","emoji":"...","style":"..."}'
+                        ),
+                    },
+                    {"role": "user", "content": topic},
+                ],
+            )
+
+            import json
+            raw = response.choices[0].message.content.strip()
+            # Handle markdown code blocks in response
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            data = json.loads(raw)
+
+            result = generate_on_demand_video(
+                title=data.get("title", topic[:30]),
+                content=data.get("content", topic),
+                emoji=data.get("emoji", "✨"),
+                style=data.get("style", "facts"),
+            )
+
+            if result and result.get("video_path"):
+                with open(result["video_path"], "rb") as vf:
+                    bot.send_video(
+                        message.chat.id,
+                        vf,
+                        caption=f"🎬 *{data.get('title', 'Video')}*",
+                        parse_mode="Markdown",
+                        supports_streaming=True,
+                        reply_to_message_id=message.message_id,
+                    )
+            else:
+                bot.reply_to(message, "❌ Video generation failed. Please try again.")
+
+        except json.JSONDecodeError:
+            bot.reply_to(message, "❌ Failed to generate video content. Please try a different topic.")
+        except Exception as e:
+            print(f"[VideoCmd] Error: {e}", flush=True)
+            bot.reply_to(message, f"❌ Error generating video: {str(e)}")
 
     # ─────────────────────────────────────────
     # Image generation text handler & delivery

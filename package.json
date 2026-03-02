@@ -10,6 +10,19 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@mermaid-js/mermaid-cli": "^11.12.0"
+    "@mermaid-js/mermaid-cli": "^11.12.0",
+    "@remotion/animated-emoji": "^4.0.431",
+    "@remotion/animation-utils": "^4.0.431",
+    "@remotion/bundler": "4.0.431",
+    "@remotion/cli": "4.0.431",
+    "@remotion/noise": "^4.0.431",
+    "@remotion/renderer": "4.0.431",
+    "@remotion/sfx": "^4.0.431",
+    "@remotion/shapes": "^4.0.431",
+    "@remotion/transitions": "^4.0.431",
+    "@types/react": "19.2.14",
+    "remotion": "4.0.431",
+    "typescript": "5.9.3",
+    "zod": "4.3.6"
   }
 }

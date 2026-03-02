@@ -24,3 +24,5 @@ static/proposals/
 .agent/workflows/deploy-vps.md
 bot.log
 .DS_Store
+static/generated/
+static/videos/

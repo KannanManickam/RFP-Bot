@@ -21,6 +21,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from image_generator import generate_image_from_text
+from video_generator import generate_fun_fact_video, is_enabled as video_enabled, cleanup_old_videos
 
 # ─────────────────────────────────────────────
 # Config
@@ -111,6 +112,18 @@ def run_fun_fact_job(chain=True):
             _send_image(CHAT_ID, result["image_path"], caption="🎨 _Illustration of today's fun fact_")
         else:
             _log("Image generation failed, sending text only.")
+
+        # 4. Generate an animated video using Remotion (if enabled)
+        if video_enabled():
+            _log("Generating Fun Fact video...")
+            video_result = generate_fun_fact_video(fact_text)
+            if video_result and video_result.get("video_path"):
+                _send_video(CHAT_ID, video_result["video_path"], caption="🎬 _Animated fun fact_")
+            else:
+                _log("Video generation failed, skipping.")
+
+            # Periodic cleanup of old videos
+            cleanup_old_videos(max_age_hours=48)
 
         _log("Fun Fact job completed.")
 
@@ -275,6 +288,21 @@ def _send_image(chat_id, image_path, caption=""):
         _bot.send_photo(chat_id, buf, caption=caption, parse_mode="Markdown")
     except Exception as e:
         _log(f"Error sending image: {e}")
+
+
+def _send_video(chat_id, video_path, caption=""):
+    """Send a video to Telegram."""
+    try:
+        with open(video_path, "rb") as vf:
+            _bot.send_video(
+                chat_id,
+                vf,
+                caption=caption,
+                parse_mode="Markdown",
+                supports_streaming=True,
+            )
+    except Exception as e:
+        _log(f"Error sending video: {e}")
 
 
 def _send_long_message(chat_id, text, max_len=4096):
