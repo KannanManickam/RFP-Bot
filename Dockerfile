@@ -57,7 +57,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     requests
 
 # Copy application code
-COPY main.py generator.py document_parser.py image_generator.py video_generator.py daily_jobs.py puppeteer_config.json ./
+COPY main.py generator.py document_parser.py image_generator.py video_generator.py daily_jobs.py content_history.py puppeteer_config.json ./
 COPY templates/ templates/
 COPY static/ static/
 COPY public/ static/
@@ -68,7 +68,7 @@ COPY remotion/ remotion/
 RUN npx remotion browser ensure
 
 # Create static directories
-RUN mkdir -p static/proposals static/generated static/videos
+RUN mkdir -p static/proposals static/generated static/videos data
 
 # Expose port
 EXPOSE 8080

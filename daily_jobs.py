@@ -22,6 +22,11 @@ from apscheduler.triggers.cron import CronTrigger
 
 from image_generator import generate_image_from_text
 from video_generator import generate_fun_fact_video, is_enabled as video_enabled, cleanup_old_videos
+from content_history import (
+    get_recent_topics,
+    add_entry,
+    pick_fresh_category,
+)
 
 # ─────────────────────────────────────────────
 # Config
@@ -50,25 +55,62 @@ _bot = None     # Telegram bot instance, set at startup via init()
 # ─────────────────────────────────────────────
 
 FUN_FACT_SYSTEM_PROMPT = (
-    "You are a fascinating trivia curator. Generate ONE interesting, obscure, "
-    "and surprising fun fact. Topics can include: etymology, science, history, "
-    "sports origins, language quirks, mathematics, nature, food origins, "
-    "cultural traditions, or any 'did you know' style knowledge.\n\n"
+    "You are a world-class trivia curator known for jaw-dropping, obscure facts "
+    "that make people stop scrolling and say 'wait, WHAT?!'\n\n"
     "RULES:\n"
+    "- Generate ONE fun fact from the SPECIFIC CATEGORY given to you. "
+    "Stick strictly to that category.\n"
     "- The fact must be TRUE and verifiable.\n"
-    "- Write in a conversational, engaging tone.\n"
-    "- 3 to 5 lines maximum.\n"
-    "- Start with the surprising hook, then explain the backstory.\n"
+    "- Pick something genuinely surprising — avoid well-known trivia. "
+    "Go deep and obscure.\n"
+    "- Write in a conversational, engaging tone. 3 to 5 lines maximum.\n"
+    "- Start with the mind-blowing hook, then the backstory.\n"
     "- End with a fun closing remark or emoji.\n"
     "- Do NOT use a title or heading — just the text.\n"
-    "- Do NOT repeat common facts (e.g., 'honey never expires'). Be creative.\n"
-    "- Vary the topic every time — cover different domains."
+    "- Do NOT repeat common facts (e.g., 'honey never expires', "
+    "'octopuses have three hearts', 'bananas are berries').\n"
+    "- Be WILDLY creative. Surprise me."
 )
 
 
+def _summarize_content(text: str) -> str:
+    """Generate a 1-line summary of content for deduplication tracking."""
+    try:
+        response = client_ai.chat.completions.create(
+            model=CONTENT_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Summarize the following content in exactly ONE short line (max 15 words). "
+                    "Capture the core topic/subject only. No fluff.",
+                },
+                {"role": "user", "content": text[:500]},
+            ],
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        # Fallback: use first 80 chars of the content itself
+        return text[:80].replace("\n", " ")
+
+
 def _generate_fun_fact_text():
-    """Generate an interesting fun fact using AI."""
+    """Generate an interesting fun fact using AI with category rotation and anti-repeat."""
     today = datetime.now(IST).strftime("%A, %d %B %Y")
+
+    # Pick a fresh category that hasn't been used recently
+    category = pick_fresh_category()
+    _log(f"Fun fact category: {category}")
+
+    # Build anti-repeat context
+    recent_topics = get_recent_topics("fun_fact", limit=30)
+    anti_repeat = ""
+    if recent_topics:
+        topics_list = "\n".join(f"- {t}" for t in recent_topics)
+        anti_repeat = (
+            f"\n\nCRITICAL — DO NOT cover any of these previously sent topics:\n"
+            f"{topics_list}\n\nPick something completely different."
+        )
+
     response = client_ai.chat.completions.create(
         model=CONTENT_MODEL,
         messages=[
@@ -76,13 +118,23 @@ def _generate_fun_fact_text():
             {
                 "role": "user",
                 "content": (
-                    f"Today is {today}. Generate a fresh, surprising fun fact "
-                    "that I probably haven't heard before."
+                    f"Today is {today}.\n"
+                    f"YOUR CATEGORY: {category}\n\n"
+                    f"Generate a fresh, surprising fun fact from the "
+                    f"'{category}' category that I probably haven't heard before."
+                    f"{anti_repeat}"
                 ),
             },
         ],
     )
-    return response.choices[0].message.content.strip()
+    fact_text = response.choices[0].message.content.strip()
+
+    # Track in history
+    summary = _summarize_content(fact_text)
+    add_entry("fun_fact", summary, category=category)
+    _log(f"Fun fact tracked: [{category}] {summary}")
+
+    return fact_text
 
 
 def run_fun_fact_job(chain=True):
@@ -142,51 +194,71 @@ def run_fun_fact_job(chain=True):
 # ─────────────────────────────────────────────
 
 AI_TECH_PULSE_SYSTEM_PROMPT = (
-    "You are an AI tech trends curator for a builder/developer audience. "
-    "Your job is to identify what's buzzing in the AI tech world RIGHT NOW.\n\n"
+    "You are a VIRAL AI tech scout for a product manager who is also a developer "
+    "and builder. Your job is to surface the most EXCITING, buzz-worthy things "
+    "happening in AI RIGHT NOW — the stuff that's blowing up on Twitter/X, "
+    "Hacker News, Reddit r/LocalLLaMA, and the builder community.\n\n"
     "RULES:\n"
-    "- Focus ONLY on AI/ML technology trends — NOT company earnings, politics, "
-    "lawsuits, or corporate drama.\n"
-    "- Highlight things like: new open-source models, viral GitHub repos, "
-    "agentic tools, novel techniques, breakthrough papers, community-built "
-    "projects, new frameworks, API launches, or developer tool innovations.\n"
-    "- Be specific with names, repos, and tools when possible.\n\n"
+    "- Focus on VIRAL moments: things like OpenClaw, Perplexity Computer, "
+    "new model drops that broke the internet, viral GitHub repos with 1000+ "
+    "stars overnight, game-changing API launches, open-source projects that "
+    "went viral, breakthrough demos that made devs say 'I need to build with this'.\n"
+    "- Target audience is a BUILDER — they want things they can try, fork, "
+    "build on top of, or integrate into their projects.\n"
+    "- Be SPECIFIC: name the repo, the tool, the model, the API. No vague "
+    "generalizations like 'AI is transforming healthcare'.\n"
+    "- SKIP: company earnings, funding rounds, corporate drama, lawsuits, "
+    "regulatory news, generic think-pieces.\n"
+    "- Each trend should make the reader think: 'I need to check this out "
+    "RIGHT NOW and maybe build something with it.'\n\n"
     "FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:\n\n"
-    "📡 Trending in AI Tech\n\n"
+    "📡 What's Viral in AI Right Now\n\n"
     "[2-3 trends, each with an emoji number (1️⃣ 2️⃣ 3️⃣), a bold title, "
-    "and 2-3 lines explaining what's happening and why it matters]\n\n"
+    "and 2-3 lines on what it is, why it went viral, and why a builder should care]\n\n"
     "🛠 Build Ideas\n\n"
     "[2-3 actionable project ideas inspired by the trends above. "
     "Each starts with 💡 and is 1-2 lines. These should be things a solo "
-    "developer or small team could actually build.]\n\n"
+    "developer or small team could actually build THIS WEEKEND.]\n\n"
     "📊 Quick Stat\n\n"
-    "[One notable AI stat or metric from this week — can be approximate.]\n\n"
-    "Keep the entire response concise and punchy. Use emojis tastefully. "
+    "[One mind-blowing AI stat or metric from this week.]\n\n"
+    "Keep the entire response concise, punchy, and exciting. Use emojis tastefully. "
     "Do NOT use markdown headers (#). Use plain text with emoji separators."
 )
 
 EVENING_TECH_PULSE_SYSTEM_PROMPT = (
-    "You are a tech trends curator specialising in Drones, IoT, and Robotics "
-    "for a builder/developer audience. Your job is to surface what's buzzing "
-    "in these domains RIGHT NOW.\n\n"
+    "You are a tech trends curator for someone who RUNS A STEM EDUCATION CENTER "
+    "IN INDIA, teaching students how to BUILD drones, robotics projects, and IoT "
+    "systems. Your job is to surface the most exciting, student-relevant "
+    "developments in these spaces.\n\n"
+    "CONTEXT ABOUT THE AUDIENCE:\n"
+    "- Runs a hands-on STEM center in India for students\n"
+    "- Teaches drone building, robotics, and IoT\n"
+    "- Interested in things students can actually BUILD and LEARN from\n"
+    "- Cares about affordable hardware, open-source projects, and Indian ecosystem\n\n"
     "RULES:\n"
-    "- Focus ONLY on: drones, UAVs, IoT platforms & protocols, robotics, "
-    "embedded AI, edge computing, sensor tech, ROS/ROS2, autonomous systems, "
-    "hardware launches, and open-source robotics/IoT projects.\n"
-    "- Do NOT cover general AI/ML, company earnings, politics, or corporate drama.\n"
-    "- Be specific with product names, repos, frameworks, and hardware when possible.\n\n"
+    "- Focus on: student-buildable drone projects, affordable robotics kits, "
+    "open-source drone frames (ArduPilot, PX4, Betaflight), IoT projects with "
+    "ESP32/Arduino/Raspberry Pi, ROS/ROS2 tutorials and projects, Indian drone "
+    "regulations (DGCA updates), Indian competitions (e-Yantra, Smart India "
+    "Hackathon, Drone Olympics), Indian maker community highlights.\n"
+    "- Every trend should answer: 'What can my students BUILD from this?'\n"
+    "- Include India-specific context: pricing in INR where relevant, "
+    "availability in India, relevance to Indian STEM education.\n"
+    "- SKIP: military drones, enterprise-only solutions students can't access, "
+    "generic industry reports, corporate funding news.\n"
+    "- Be specific with hardware names, project repos, competition details.\n\n"
     "FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:\n\n"
-    "🚁 Trending in Drones, IoT & Robotics\n\n"
+    "🚁 STEM Builder Pulse — Drones, Robotics & IoT\n\n"
     "[2-3 trends, each with an emoji number (1️⃣ 2️⃣ 3️⃣), a bold title, "
-    "and 2-3 lines explaining what's happening and why it matters]\n\n"
-    "🛠 Build Ideas\n\n"
-    "[2-3 actionable project ideas inspired by the trends above. "
-    "Each starts with 💡 and is 1-2 lines. Focus on drone builds, IoT "
-    "prototypes, or robotics projects a solo developer or small team could tackle.]\n\n"
+    "and 2-3 lines on what it is and how students/makers can use it]\n\n"
+    "🛠 Student Project Ideas\n\n"
+    "[2-3 hands-on project ideas students could build, inspired by the trends. "
+    "Each starts with 💡 and is 1-2 lines. Include approximate cost in INR "
+    "if hardware is involved.]\n\n"
     "📊 Quick Stat\n\n"
-    "[One notable stat or metric from the drones/IoT/robotics world — "
-    "can be approximate.]\n\n"
-    "Keep the entire response concise and punchy. Use emojis tastefully. "
+    "[One interesting stat about drones/robotics/IoT in India or globally.]\n\n"
+    "Keep the entire response concise, exciting, and actionable for educators "
+    "and student builders. Use emojis tastefully. "
     "Do NOT use markdown headers (#). Use plain text with emoji separators."
 )
 
@@ -197,26 +269,41 @@ def _is_morning():
 
 
 def _generate_ai_tech_pulse(morning=True):
-    """Generate tech trending content using AI.
-    morning=True  → AI Tech Pulse (general AI/ML)
-    morning=False → Drone & IoT Pulse (drones, IoT, robotics)
+    """Generate tech trending content using AI with anti-repeat.
+    morning=True  → AI Tech Pulse (viral AI for builders)
+    morning=False → STEM Builder Pulse (drones, IoT, robotics for India STEM center)
     """
     today = datetime.now(IST).strftime("%A, %d %B %Y")
+    content_type = "ai_tech_pulse" if morning else "drone_iot_pulse"
+
+    # Build anti-repeat context
+    recent_topics = get_recent_topics(content_type, limit=30)
+    anti_repeat = ""
+    if recent_topics:
+        topics_list = "\n".join(f"- {t}" for t in recent_topics)
+        anti_repeat = (
+            f"\n\nCRITICAL — DO NOT cover any of these previously sent topics:\n"
+            f"{topics_list}\n\nCover something completely NEW."
+        )
 
     if morning:
         system_prompt = AI_TECH_PULSE_SYSTEM_PROMPT
         user_msg = (
-            f"Today is {today}. What are the most viral and trending "
-            "AI tech topics right now? Focus on what developers and "
-            "builders are excited about."
+            f"Today is {today}. What are the most VIRAL and exciting things "
+            "happening in AI right now? I want the stuff that's blowing up on "
+            "Twitter/X and Hacker News — things I can try, build with, or fork. "
+            "Think: new model drops, viral repos, game-changing tools, community "
+            f"projects that went big.{anti_repeat}"
         )
     else:
         system_prompt = EVENING_TECH_PULSE_SYSTEM_PROMPT
         user_msg = (
-            f"Today is {today}. What are the most exciting developments "
-            "in drones, IoT, and robotics right now? Cover new hardware, "
-            "open-source projects, frameworks, and anything builders are "
-            "buzzing about in these spaces."
+            f"Today is {today}. What are the most exciting developments in "
+            "drones, IoT, and robotics that my STEM students in India would "
+            "love? Focus on things they can BUILD — affordable hardware, "
+            "open-source projects, new drone frames, robotics kits, IoT boards, "
+            "Indian competitions, and maker community highlights. "
+            f"Make it actionable for educators and student builders.{anti_repeat}"
         )
 
     response = client_ai.chat.completions.create(
@@ -226,7 +313,14 @@ def _generate_ai_tech_pulse(morning=True):
             {"role": "user", "content": user_msg},
         ],
     )
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content.strip()
+
+    # Track in history
+    summary = _summarize_content(content)
+    add_entry(content_type, summary)
+    _log(f"{content_type} tracked: {summary}")
+
+    return content
 
 
 def run_ai_tech_pulse_job():
@@ -250,7 +344,7 @@ def run_ai_tech_pulse_job():
         if morning:
             header = f"🔥 *AI Tech Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
         else:
-            header = f"🚁 *Drone & IoT Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
+            header = f"🚁 *STEM Builder Pulse — {today}*\n\n━━━━━━━━━━━━━━━━━━━━\n"
 
         full_message = header + content
 

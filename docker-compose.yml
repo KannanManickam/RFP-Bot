@@ -9,9 +9,11 @@ services:
       - .env
     volumes:
       - proposals_data:/app/static/proposals
+      - content_data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
       - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 volumes:
   proposals_data:
+  content_data:
