@@ -81,12 +81,16 @@ def generate_video(composition_id, props=None, duration_seconds=12):
         "--concurrency=1",
     ]
 
+    temp_props_file = None
     # Pass input props as JSON
     if props:
-        props_json = json.dumps(props)
-        cmd.extend(["--props", props_json])
+        temp_props_file = os.path.join(VIDEOS_DIR, f"props-{video_id}.json")
+        with open(temp_props_file, "w") as f:
+            json.merge = False
+            json.dump(props, f)
+        cmd.extend(["--props", temp_props_file])
 
-    _log(f"Command: {' '.join(cmd[:6])}... (props omitted)")
+    _log(f"Command: {' '.join(cmd)}")
 
     try:
         result = subprocess.run(
@@ -124,15 +128,25 @@ def generate_video(composition_id, props=None, duration_seconds=12):
     except Exception as e:
         _log(f"Render error: {e}")
         return None
+    finally:
+        # Cleanup temp props file
+        if temp_props_file and os.path.exists(temp_props_file):
+            try:
+                os.remove(temp_props_file)
+            except Exception as e:
+                _log(f"Failed to cleanup temp props file: {e}")
 
 
-def generate_fun_fact_video(fact_text, emoji="🧠"):
+import base64
+
+def generate_fun_fact_video(fact_text, emoji="🧠", image_path=None):
     """
     Generate an animated Fun Fact video.
 
     Args:
         fact_text: The fun fact text content
         emoji: Emoji to display (default: 🧠)
+        image_path: Optional path to an image to use as background
 
     Returns:
         dict with video_path/video_id on success, None on failure.
@@ -142,6 +156,19 @@ def generate_fun_fact_video(fact_text, emoji="🧠"):
         "emoji": emoji,
         "brandName": "Sparktoship",
     }
+    
+    # If we have an image, convert to Base64 to avoid Puppeteer local file permission issues
+    if image_path and os.path.exists(image_path):
+        try:
+            with open(image_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                # Determine mime type simply
+                ext = os.path.splitext(image_path)[1].lower()
+                mime_type = "image/png" if ext == ".png" else "image/jpeg"
+                props["imageBase64"] = f"data:{mime_type};base64,{encoded_string}"
+        except Exception as e:
+            _log(f"Failed to encode background image: {e}")
+
     return generate_video("FunFact", props=props, duration_seconds=12)
 
 

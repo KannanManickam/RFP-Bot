@@ -34,6 +34,7 @@ export const funFactSchema = z.object({
     factText: z.string(),
     emoji: z.string().default("🧠"),
     brandName: z.string().default("Sparktoship"),
+    imageBase64: z.string().optional(),
 });
 
 type FunFactProps = z.infer<typeof funFactSchema>;
@@ -61,6 +62,41 @@ const AnimatedBackground: React.FC<{ hueOffset?: number }> = ({ hueOffset = 0 })
     );
 };
 
+// ── Image Background with Ken Burns & Blur ──
+const ImageBackground: React.FC<{ base64Image: string; durationInFrames: number }> = ({ base64Image, durationInFrames }) => {
+    const frame = useCurrentFrame();
+
+    // Slow zoom from 1.0 to 1.15 over the course of the scene
+    const scale = interpolate(frame, [0, durationInFrames], [1.0, 1.15], {
+        extrapolateRight: "clamp",
+    });
+
+    return (
+        <AbsoluteFill>
+            {/* The actual image, blurred and scaled */}
+            <AbsoluteFill style={{ overflow: "hidden" }}>
+                <img
+                    src={base64Image}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        filter: "blur(12px)",
+                        transform: `scale(${scale})`,
+                    }}
+                />
+            </AbsoluteFill>
+
+            {/* Dark overlay to ensure text readability */}
+            <AbsoluteFill
+                style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                }}
+            />
+        </AbsoluteFill>
+    );
+};
+
 // ── Intro shapes config ──
 const INTRO_SHAPES = [
     { type: "star" as const, x: 8, y: 12, size: 35, color: GOLD, speed: 0.006, seed: "is1", delay: 10 },
@@ -81,9 +117,9 @@ const CONTENT_SHAPES = [
 // ═════════════════════════════════════════════
 // Scene 1: INTRO — Emoji + Title
 // ═════════════════════════════════════════════
-const IntroScene: React.FC<{ emoji: string }> = ({ emoji }) => {
+const IntroScene: React.FC<{ emoji: string; imageBase64?: string }> = ({ emoji, imageBase64 }) => {
     const frame = useCurrentFrame();
-    const { fps } = useVideoConfig();
+    const { fps, durationInFrames } = useVideoConfig();
 
     const titleProgress = spring({
         frame: frame - 12,
@@ -96,8 +132,14 @@ const IntroScene: React.FC<{ emoji: string }> = ({ emoji }) => {
 
     return (
         <AbsoluteFill>
-            <AnimatedBackground />
-            <NoiseParticleField count={20} color="rgba(255, 200, 50, 0.12)" />
+            {imageBase64 ? (
+                <ImageBackground base64Image={imageBase64} durationInFrames={durationInFrames} />
+            ) : (
+                <>
+                    <AnimatedBackground />
+                    <NoiseParticleField count={20} color="rgba(255, 200, 50, 0.12)" />
+                </>
+            )}
             <DecorativeShapes shapes={INTRO_SHAPES} />
 
             {/* Whoosh at start */}
@@ -159,9 +201,9 @@ const IntroScene: React.FC<{ emoji: string }> = ({ emoji }) => {
 // ═════════════════════════════════════════════
 // Scene 2: CONTENT — Typewriter text reveal
 // ═════════════════════════════════════════════
-const ContentScene: React.FC<{ factText: string; emoji: string }> = ({ factText, emoji }) => {
+const ContentScene: React.FC<{ factText: string; emoji: string; imageBase64?: string }> = ({ factText, emoji, imageBase64 }) => {
     const frame = useCurrentFrame();
-    const { fps } = useVideoConfig();
+    const { fps, durationInFrames } = useVideoConfig();
 
     // Small emoji in top left as context
     const miniEmojiOpacity = spring({
@@ -172,8 +214,14 @@ const ContentScene: React.FC<{ factText: string; emoji: string }> = ({ factText,
 
     return (
         <AbsoluteFill>
-            <AnimatedBackground hueOffset={120} />
-            <NoiseParticleField count={18} color="rgba(255, 200, 50, 0.1)" baseSpeed={0.006} />
+            {imageBase64 ? (
+                <ImageBackground base64Image={imageBase64} durationInFrames={durationInFrames} />
+            ) : (
+                <>
+                    <AnimatedBackground hueOffset={120} />
+                    <NoiseParticleField count={18} color="rgba(255, 200, 50, 0.1)" baseSpeed={0.006} />
+                </>
+            )}
             <DecorativeShapes shapes={CONTENT_SHAPES} />
 
             <div
@@ -235,8 +283,9 @@ const ContentScene: React.FC<{ factText: string; emoji: string }> = ({ factText,
 // ═════════════════════════════════════════════
 // Scene 3: OUTRO — Brand + converging shapes
 // ═════════════════════════════════════════════
-const OutroScene: React.FC<{ brandName: string }> = ({ brandName }) => {
+const OutroScene: React.FC<{ brandName: string; imageBase64?: string }> = ({ brandName, imageBase64 }) => {
     const frame = useCurrentFrame();
+    const { durationInFrames } = useVideoConfig();
 
     // Gentle fade to darker
     const dimOverlay = interpolate(frame, [0, 60], [0, 0.3], {
@@ -245,8 +294,14 @@ const OutroScene: React.FC<{ brandName: string }> = ({ brandName }) => {
 
     return (
         <AbsoluteFill>
-            <AnimatedBackground hueOffset={240} />
-            <NoiseParticleField count={12} color="rgba(255, 200, 50, 0.08)" />
+            {imageBase64 ? (
+                <ImageBackground base64Image={imageBase64} durationInFrames={durationInFrames} />
+            ) : (
+                <>
+                    <AnimatedBackground hueOffset={240} />
+                    <NoiseParticleField count={12} color="rgba(255, 200, 50, 0.08)" />
+                </>
+            )}
 
             {/* Dim overlay for cinematic feel */}
             <AbsoluteFill
@@ -272,6 +327,7 @@ export const FunFact: React.FC<FunFactProps> = ({
     factText,
     emoji,
     brandName,
+    imageBase64,
 }) => {
     const { width, height, durationInFrames } = useVideoConfig();
 
@@ -286,7 +342,7 @@ export const FunFact: React.FC<FunFactProps> = ({
             <TransitionSeries>
                 {/* Scene 1: Intro (2.5s = 75 frames) */}
                 <TransitionSeries.Sequence durationInFrames={INTRO_FRAMES}>
-                    <IntroScene emoji={emoji} />
+                    <IntroScene emoji={emoji} imageBase64={imageBase64} />
                 </TransitionSeries.Sequence>
 
                 {/* Transition: slide from bottom */}
@@ -297,7 +353,7 @@ export const FunFact: React.FC<FunFactProps> = ({
 
                 {/* Scene 2: Content (dynamic duration) */}
                 <TransitionSeries.Sequence durationInFrames={contentFrames}>
-                    <ContentScene factText={factText} emoji={emoji} />
+                    <ContentScene factText={factText} emoji={emoji} imageBase64={imageBase64} />
                 </TransitionSeries.Sequence>
 
                 {/* Transition: clock wipe */}
@@ -308,7 +364,7 @@ export const FunFact: React.FC<FunFactProps> = ({
 
                 {/* Scene 3: Outro (2.5s = 75 frames) */}
                 <TransitionSeries.Sequence durationInFrames={OUTRO_FRAMES}>
-                    <OutroScene brandName={brandName} />
+                    <OutroScene brandName={brandName} imageBase64={imageBase64} />
                 </TransitionSeries.Sequence>
             </TransitionSeries>
         </AbsoluteFill>

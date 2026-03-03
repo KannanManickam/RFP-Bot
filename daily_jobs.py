@@ -168,7 +168,9 @@ def run_fun_fact_job(chain=True):
         # 4. Generate an animated video using Remotion (if enabled)
         if video_enabled():
             _log("Generating Fun Fact video...")
-            video_result = generate_fun_fact_video(fact_text)
+            # Use the image generated above (if any) as the video background
+            bg_image_path = result.get("image_path") if result else None
+            video_result = generate_fun_fact_video(fact_text, image_path=bg_image_path)
             if video_result and video_result.get("video_path"):
                 _send_video(CHAT_ID, video_result["video_path"], caption="🎬 _Animated fun fact_")
             else:
