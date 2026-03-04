@@ -26,3 +26,4 @@ bot.log
 .DS_Store
 static/generated/
 static/videos/
+data/content_history.json

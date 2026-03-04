@@ -631,3 +631,433 @@ export const ConvergingShapes: React.FC<{
         </AbsoluteFill>
     );
 };
+
+// ═══════════════════════════════════════════════
+// Zoom Punch — cinematic scale impact on scene entry
+// ═══════════════════════════════════════════════
+
+export const ZoomPunch: React.FC<{
+    children: React.ReactNode;
+    delay?: number;
+}> = ({ children, delay = 0 }) => {
+    const frame = useCurrentFrame();
+    const { fps } = useVideoConfig();
+
+    const progress = spring({
+        frame: frame - delay,
+        fps,
+        config: { damping: 6, stiffness: 500, mass: 0.4 },
+    });
+
+    const scaleVal = interpolate(progress, [0, 0.4, 1], [1.06, 0.97, 1.0], {
+        extrapolateRight: "clamp",
+    });
+
+    return (
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+                transform: `scale(${scaleVal})`,
+                transformOrigin: "center center",
+            }}
+        >
+            {children}
+        </div>
+    );
+};
+
+// ═══════════════════════════════════════════════
+// Particle Burst — one-shot radial spray on trigger frame
+// ═══════════════════════════════════════════════
+
+export const ParticleBurst: React.FC<{
+    triggerFrame: number;
+    color?: string;
+    count?: number;
+    x?: string;
+    y?: string;
+}> = ({ triggerFrame, color = "#FFD700", count = 18, x = "50%", y = "55%" }) => {
+    const frame = useCurrentFrame();
+    const { fps } = useVideoConfig();
+
+    const localFrame = frame - triggerFrame;
+    if (localFrame < 0 || localFrame > 50) return null;
+
+    const particles = Array.from({ length: count }, (_, i) => {
+        const angle = (i / count) * Math.PI * 2;
+        const noiseOffset = noise2D(`burst-${i}`, i * 0.7, 0) * 0.5;
+        const speed = 100 + (i % 5) * 25;
+
+        const progress = spring({
+            frame: localFrame,
+            fps,
+            config: { damping: 28, stiffness: 220, mass: 0.3 },
+        });
+
+        const dist = interpolate(progress, [0, 1], [0, speed], { extrapolateRight: "clamp" });
+        const px = Math.cos(angle + noiseOffset) * dist;
+        const py = Math.sin(angle + noiseOffset) * dist;
+
+        const opacity = interpolate(localFrame, [0, 8, 30, 50], [0, 0.9, 0.4, 0], {
+            extrapolateRight: "clamp",
+        });
+
+        const size = 4 + (i % 4) * 2;
+
+        return (
+            <div
+                key={i}
+                style={{
+                    position: "absolute",
+                    left: x,
+                    top: y,
+                    width: size,
+                    height: size,
+                    borderRadius: "50%",
+                    background: color,
+                    opacity,
+                    transform: `translate(${px}px, ${py}px) translate(-50%, -50%)`,
+                    pointerEvents: "none",
+                    filter: `blur(${1 + (i % 2)}px)`,
+                }}
+            />
+        );
+    });
+
+    return <AbsoluteFill style={{ pointerEvents: "none" }}>{particles}</AbsoluteFill>;
+};
+
+// ═══════════════════════════════════════════════
+// Karaoke Line — word-by-word colour highlight
+// ═══════════════════════════════════════════════
+
+export const KaraokeLine: React.FC<{
+    text: string;
+    startFrame?: number;
+    framesPerWord?: number;
+    fontSize?: number;
+    dimColor?: string;
+    accent?: string;
+    maxCharsPerLine?: number;
+}> = ({
+    text,
+    startFrame = 0,
+    framesPerWord = 8,
+    fontSize = 40,
+    dimColor = "rgba(240, 230, 211, 0.28)",
+    accent = "#FFD700",
+    maxCharsPerLine = 38,
+}) => {
+        const frame = useCurrentFrame();
+        const { fps } = useVideoConfig();
+
+        const words = text.split(" ");
+        const lines: string[][] = [];
+        let currentLine: string[] = [];
+        let currentLen = 0;
+
+        for (const word of words) {
+            const space = currentLine.length > 0 ? 1 : 0;
+            if (currentLen + space + word.length > maxCharsPerLine && currentLine.length > 0) {
+                lines.push(currentLine);
+                currentLine = [word];
+                currentLen = word.length;
+            } else {
+                currentLen += space + word.length;
+                currentLine.push(word);
+            }
+        }
+        if (currentLine.length > 0) lines.push(currentLine);
+
+        let wordIndex = 0;
+
+        return (
+            <div
+                style={{
+                    padding: "30px 65px",
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                }}
+            >
+                {lines.map((lineWords, li) => (
+                    <div
+                        key={li}
+                        style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                            gap: "0 12px",
+                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                            fontSize,
+                            lineHeight: 1.65,
+                            fontWeight: 500,
+                        }}
+                    >
+                        {lineWords.map((word, wi) => {
+                            const idx = wordIndex++;
+                            const wordFrame = startFrame + idx * framesPerWord;
+
+                            const highlightProg = spring({
+                                frame: frame - wordFrame,
+                                fps,
+                                config: { damping: 20, stiffness: 200, mass: 0.5 },
+                            });
+
+                            const accentOpacity = Math.min(1, highlightProg);
+                            const dimOpacity = Math.max(0, 1 - highlightProg * 1.5);
+
+                            return (
+                                <span key={wi} style={{ position: "relative", display: "inline-block" }}>
+                                    <span
+                                        style={{
+                                            color: dimColor,
+                                            textShadow: "0 1px 6px rgba(0,0,0,0.4)",
+                                            opacity: dimOpacity,
+                                            position: "absolute",
+                                            left: 0,
+                                            top: 0,
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {word}
+                                    </span>
+                                    <span
+                                        style={{
+                                            color: accent,
+                                            textShadow: `0 0 20px ${accent}77, 0 1px 6px rgba(0,0,0,0.4)`,
+                                            opacity: accentOpacity,
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {word}
+                                    </span>
+                                </span>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+// ═══════════════════════════════════════════════
+// Waveform Visualizer — frequency bars from audio data
+// ═══════════════════════════════════════════════
+
+export const WaveformVisualizer: React.FC<{
+    src: string;
+    accent?: string;
+    barCount?: number;
+    height?: number;
+    opacity?: number;
+}> = ({ src, accent = "#FFD700", barCount = 64, height = 56, opacity = 0.22 }) => {
+    const frame = useCurrentFrame();
+    const { fps, width } = useVideoConfig();
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useAudioData, visualizeAudio } = require("@remotion/media-utils");
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const audioData = useAudioData(src);
+
+    let bars: number[];
+    if (audioData) {
+        bars = visualizeAudio({ fps, frame, audioData, numberOfSamples: barCount, smoothing: true });
+    } else {
+        bars = Array.from({ length: barCount }, (_, i) =>
+            Math.abs(Math.sin(frame * 0.1 + i * 0.28) * 0.35)
+        );
+    }
+
+    const barWidth = width / barCount;
+
+    return (
+        <div
+            style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                width: "100%",
+                height,
+                pointerEvents: "none",
+                opacity,
+            }}
+        >
+            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+                <defs>
+                    <linearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={accent} stopOpacity="1" />
+                        <stop offset="100%" stopColor={accent} stopOpacity="0.3" />
+                    </linearGradient>
+                </defs>
+                {bars.map((val, i) => {
+                    const barH = Math.max(2, val * height * 2.8);
+                    return (
+                        <rect
+                            key={i}
+                            x={i * barWidth + barWidth * 0.15}
+                            y={height - barH}
+                            width={barWidth * 0.7}
+                            height={barH}
+                            rx={2}
+                            fill="url(#waveGrad)"
+                        />
+                    );
+                })}
+            </svg>
+        </div>
+    );
+};
+
+// ═══════════════════════════════════════════════
+// Source Badge — credibility pill that slides up
+// ═══════════════════════════════════════════════
+
+export const SourceBadge: React.FC<{
+    label: string;
+    appearAt?: number;
+    accent?: string;
+}> = ({ label, appearAt = 20, accent = "#FFD700" }) => {
+    const frame = useCurrentFrame();
+    const { fps } = useVideoConfig();
+
+    const progress = spring({
+        frame: frame - appearAt,
+        fps,
+        config: { damping: 18, stiffness: 120 },
+    });
+
+    const yOffset = interpolate(progress, [0, 1], [40, 0]);
+    const opacity = interpolate(progress, [0, 0.4, 1], [0, 0.7, 1]);
+
+    return (
+        <div
+            style={{
+                position: "absolute",
+                bottom: 52,
+                right: 56,
+                opacity,
+                transform: `translateY(${yOffset}px)`,
+                pointerEvents: "none",
+            }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 16px",
+                    borderRadius: 999,
+                    background: "rgba(0, 0, 0, 0.50)",
+                    border: `1px solid ${accent}44`,
+                    fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                }}
+            >
+                <span style={{ fontSize: 14, opacity: 0.8 }}>📚</span>
+                <span
+                    style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: accent,
+                        letterSpacing: 1,
+                        textTransform: "uppercase",
+                    }}
+                >
+                    {label}
+                </span>
+            </div>
+        </div>
+    );
+};
+
+// ═══════════════════════════════════════════════
+// Number Roll — animated counter from 0 to target
+// ═══════════════════════════════════════════════
+
+export const NumberRoll: React.FC<{
+    target: number;
+    startFrame?: number;
+    prefix?: string;
+    suffix?: string;
+    fontSize?: number;
+    color?: string;
+}> = ({
+    target,
+    startFrame = 0,
+    prefix = "",
+    suffix = "",
+    fontSize = 80,
+    color = "#FFD700",
+}) => {
+        const frame = useCurrentFrame();
+        const { fps } = useVideoConfig();
+
+        const progress = spring({
+            frame: frame - startFrame,
+            fps,
+            config: { damping: 22, stiffness: 80, mass: 1 },
+        });
+
+        const current = Math.floor(
+            interpolate(progress, [0, 1], [0, target], { extrapolateRight: "clamp" })
+        );
+
+        const opacity = interpolate(progress, [0, 0.15, 1], [0, 1, 1], {
+            extrapolateRight: "clamp",
+        });
+
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "center",
+                    gap: 4,
+                    opacity,
+                }}
+            >
+                {prefix && (
+                    <span
+                        style={{
+                            fontSize: fontSize * 0.5,
+                            color,
+                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                            fontWeight: 700,
+                            opacity: 0.75,
+                        }}
+                    >
+                        {prefix}
+                    </span>
+                )}
+                <span
+                    style={{
+                        fontSize,
+                        fontWeight: 800,
+                        color,
+                        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                        textShadow: `0 0 30px ${color}66`,
+                        fontVariantNumeric: "tabular-nums",
+                    }}
+                >
+                    {current.toLocaleString()}
+                </span>
+                {suffix && (
+                    <span
+                        style={{
+                            fontSize: fontSize * 0.45,
+                            color,
+                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                            fontWeight: 600,
+                            opacity: 0.75,
+                        }}
+                    >
+                        {suffix}
+                    </span>
+                )}
+            </div>
+        );
+    };

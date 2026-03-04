@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { FunFact, funFactSchema } from "./compositions/FunFact";
+import { FunFactVertical, funFactVerticalSchema } from "./compositions/FunFactVertical";
 import { OnDemandVideo, onDemandSchema } from "./compositions/OnDemandVideo";
 
 // ── Duration helpers ──
@@ -12,24 +13,12 @@ const MIN_CONTENT_FRAMES = 210; // 7s minimum
 const FPS = 30;
 
 /**
- * Calculate content scene duration for SplitLineReveal (FunFact).
- * Speed: ~12 frames per line, max 40 chars per line, + 30-frame start delay.
+ * Calculate content scene duration for KaraokeLine (FunFact).
+ * Speed: 8 frames per word + 15-frame start delay + 20-frame tail.
  */
-const funFactContentFrames = (text: string, maxCharsPerLine = 40): number => {
-    const words = text.split(" ");
-    let lines = 0;
-    let currentLine = "";
-    for (const word of words) {
-        if ((currentLine + " " + word).trim().length > maxCharsPerLine && currentLine) {
-            lines++;
-            currentLine = word;
-        } else {
-            currentLine = currentLine ? currentLine + " " + word : word;
-        }
-    }
-    if (currentLine.trim()) lines++;
-
-    const needed = lines * 12 + 30;
+const funFactContentFrames = (text: string): number => {
+    const wordCount = text.split(" ").length;
+    const needed = wordCount * 8 + 15 + 20;
     return Math.max(needed, MIN_CONTENT_FRAMES);
 };
 
@@ -67,6 +56,30 @@ export const RemotionRoot: React.FC = () => {
                 width={1080}
                 height={1080}
                 schema={funFactSchema}
+                defaultProps={{
+                    factText:
+                        "The shortest war in history lasted just 38 minutes — between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after the British bombarded the palace. ⚔️",
+                    emoji: "🧠",
+                    brandName: "Sparktoship",
+                }}
+                calculateMetadata={({ props }) => {
+                    const contentFrames = funFactContentFrames(props.factText);
+                    return {
+                        durationInFrames:
+                            INTRO_FRAMES + contentFrames + OUTRO_FRAMES - TRANSITION_OVERLAP,
+                    };
+                }}
+            />
+
+            {/* Fun Fact Vertical — 9:16 format for Reels/Shorts */}
+            <Composition
+                id="FunFactVertical"
+                component={FunFactVertical}
+                durationInFrames={360}
+                fps={FPS}
+                width={1080}
+                height={1920}
+                schema={funFactVerticalSchema}
                 defaultProps={{
                     factText:
                         "The shortest war in history lasted just 38 minutes — between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after the British bombarded the palace. ⚔️",

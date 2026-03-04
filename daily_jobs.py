@@ -54,6 +54,8 @@ _bot = None     # Telegram bot instance, set at startup via init()
 # Job 1: Daily Fun Fact
 # ─────────────────────────────────────────────
 
+import json as _json
+
 FUN_FACT_SYSTEM_PROMPT = (
     "You are a world-class trivia curator known for jaw-dropping, obscure facts "
     "that make people stop scrolling and say 'wait, WHAT?!'\n\n"
@@ -63,13 +65,19 @@ FUN_FACT_SYSTEM_PROMPT = (
     "- The fact must be TRUE and verifiable.\n"
     "- Pick something genuinely surprising — avoid well-known trivia. "
     "Go deep and obscure.\n"
-    "- Write in a conversational, engaging tone. 3 to 5 lines maximum.\n"
+    "- Write in a conversational, engaging tone. 30 to 50 words maximum for factText — no more.\n"
     "- Start with the mind-blowing hook, then the backstory.\n"
     "- End with a fun closing remark or emoji.\n"
     "- Do NOT use a title or heading — just the text.\n"
     "- Do NOT repeat common facts (e.g., 'honey never expires', "
     "'octopuses have three hearts', 'bananas are berries').\n"
-    "- Be WILDLY creative. Surprise me."
+    "- Be WILDLY creative. Surprise me.\n\n"
+    "RESPONSE FORMAT — return a JSON object with exactly these four keys:\n"
+    "  factText   : the fun fact (30–50 words max)\n"
+    "  emoji      : a single emoji that best represents the fact\n"
+    "  hookLine   : a punchy teaser of 5–8 words (e.g. 'Did you know flamingos are born white?')\n"
+    "  sourceLabel: the knowledge domain or source (e.g. 'Biology', 'NASA', 'Oxford Studies', 'History')\n"
+    "Return ONLY the JSON object, no markdown fencing or extra text."
 )
 
 
@@ -94,14 +102,12 @@ def _summarize_content(text: str) -> str:
 
 
 def _generate_fun_fact_text():
-    """Generate an interesting fun fact using AI with category rotation and anti-repeat."""
+    """Generate a fun fact via AI. Returns dict: factText, emoji, hookLine, sourceLabel."""
     today = datetime.now(IST).strftime("%A, %d %B %Y")
 
-    # Pick a fresh category that hasn't been used recently
     category = pick_fresh_category()
     _log(f"Fun fact category: {category}")
 
-    # Build anti-repeat context
     recent_topics = get_recent_topics("fun_fact", limit=30)
     anti_repeat = ""
     if recent_topics:
@@ -113,6 +119,7 @@ def _generate_fun_fact_text():
 
     response = client_ai.chat.completions.create(
         model=CONTENT_MODEL,
+        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": FUN_FACT_SYSTEM_PROMPT},
             {
@@ -127,14 +134,31 @@ def _generate_fun_fact_text():
             },
         ],
     )
-    fact_text = response.choices[0].message.content.strip()
 
-    # Track in history
+    raw = response.choices[0].message.content.strip()
+    try:
+        data = _json.loads(raw)
+        fact_text    = data.get("factText", raw)
+        emoji        = data.get("emoji", "🧠")
+        hook_line    = data.get("hookLine", "")
+        source_label = data.get("sourceLabel", "")
+    except Exception:
+        _log("Warning: could not parse JSON from AI, using raw text")
+        fact_text    = raw
+        emoji        = "🧠"
+        hook_line    = ""
+        source_label = ""
+
     summary = _summarize_content(fact_text)
     add_entry("fun_fact", summary, category=category)
     _log(f"Fun fact tracked: [{category}] {summary}")
 
-    return fact_text
+    return {
+        "factText": fact_text,
+        "emoji": emoji,
+        "hookLine": hook_line,
+        "sourceLabel": source_label,
+    }
 
 
 def run_fun_fact_job(chain=True):
@@ -148,15 +172,19 @@ def run_fun_fact_job(chain=True):
     _log("Running Fun Fact job...")
 
     try:
-        # 1. Generate the fun fact text
-        fact_text = _generate_fun_fact_text()
-        _log(f"Fun fact generated ({len(fact_text)} chars)")
+        # 1. Generate the fun fact (returns dict: factText, emoji, hookLine, sourceLabel)
+        fact_data    = _generate_fun_fact_text()
+        fact_text    = fact_data["factText"]
+        emoji        = fact_data["emoji"]
+        hook_line    = fact_data.get("hookLine", "")
+        source_label = fact_data.get("sourceLabel", "")
+        _log(f"Fun fact generated ({len(fact_text)} chars) | hook: '{hook_line}' | source: '{source_label}'")
 
         # 2. Send the text message first
         header = "🧠 *Daily Fun Fact*\n\n"
         _bot.send_message(CHAT_ID, header + fact_text, parse_mode="Markdown")
 
-        # 3. Generate an illustrative image using gpt-image-1.5
+        # 3. Generate an illustrative image
         image_prompt = f"A colorful, whimsical illustration of this fun fact: {fact_text[:300]}"
         result = generate_image_from_text(image_prompt, size="1024x1024", quality="low")
 
@@ -165,12 +193,17 @@ def run_fun_fact_job(chain=True):
         else:
             _log("Image generation failed, sending text only.")
 
-        # 4. Generate an animated video using Remotion (if enabled)
+        # 4. Generate animated video (if enabled)
         if video_enabled():
             _log("Generating Fun Fact video...")
-            # Use the image generated above (if any) as the video background
             bg_image_path = result.get("image_path") if result else None
-            video_result = generate_fun_fact_video(fact_text, image_path=bg_image_path)
+            video_result = generate_fun_fact_video(
+                fact_text,
+                emoji=emoji,
+                image_path=bg_image_path,
+                hook_line=hook_line,
+                source_label=source_label,
+            )
             if video_result and video_result.get("video_path"):
                 _send_video(CHAT_ID, video_result["video_path"], caption="🎬 _Animated fun fact_")
             else:

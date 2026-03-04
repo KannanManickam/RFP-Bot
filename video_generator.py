@@ -139,7 +139,8 @@ def generate_video(composition_id, props=None, duration_seconds=12):
 
 import base64
 
-def generate_fun_fact_video(fact_text, emoji="🧠", image_path=None):
+def generate_fun_fact_video(fact_text, emoji="🧠", image_path=None,
+                             hook_line=None, source_label=None):
     """
     Generate an animated Fun Fact video.
 
@@ -147,6 +148,8 @@ def generate_fun_fact_video(fact_text, emoji="🧠", image_path=None):
         fact_text: The fun fact text content
         emoji: Emoji to display (default: 🧠)
         image_path: Optional path to an image to use as background
+        hook_line: Optional short teaser line shown in the intro (≤8 words)
+        source_label: Optional credibility label shown as a badge (e.g. 'NASA')
 
     Returns:
         dict with video_path/video_id on success, None on failure.
@@ -156,13 +159,17 @@ def generate_fun_fact_video(fact_text, emoji="🧠", image_path=None):
         "emoji": emoji,
         "brandName": "Sparktoship",
     }
-    
+
+    if hook_line:
+        props["hookLine"] = hook_line
+    if source_label:
+        props["sourceLabel"] = source_label
+
     # If we have an image, convert to Base64 to avoid Puppeteer local file permission issues
     if image_path and os.path.exists(image_path):
         try:
             with open(image_path, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                # Determine mime type simply
                 ext = os.path.splitext(image_path)[1].lower()
                 mime_type = "image/png" if ext == ".png" else "image/jpeg"
                 props["imageBase64"] = f"data:{mime_type};base64,{encoded_string}"
@@ -170,6 +177,36 @@ def generate_fun_fact_video(fact_text, emoji="🧠", image_path=None):
             _log(f"Failed to encode background image: {e}")
 
     return generate_video("FunFact", props=props, duration_seconds=12)
+
+
+def generate_fun_fact_video_vertical(fact_text, emoji="🧠", image_path=None,
+                                      hook_line=None, source_label=None):
+    """
+    Generate a 9:16 vertical Fun Fact video for Reels / YouTube Shorts.
+    Identical props to generate_fun_fact_video() but renders FunFactVertical (1080×1920).
+    """
+    props = {
+        "factText": fact_text,
+        "emoji": emoji,
+        "brandName": "Sparktoship",
+    }
+
+    if hook_line:
+        props["hookLine"] = hook_line
+    if source_label:
+        props["sourceLabel"] = source_label
+
+    if image_path and os.path.exists(image_path):
+        try:
+            with open(image_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                ext = os.path.splitext(image_path)[1].lower()
+                mime_type = "image/png" if ext == ".png" else "image/jpeg"
+                props["imageBase64"] = f"data:{mime_type};base64,{encoded_string}"
+        except Exception as e:
+            _log(f"Failed to encode background image: {e}")
+
+    return generate_video("FunFactVertical", props=props, duration_seconds=12)
 
 
 def generate_on_demand_video(title, content, emoji="✨", style="facts"):
